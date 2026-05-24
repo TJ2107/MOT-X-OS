@@ -50,11 +50,13 @@ Stop-BackendProcesses
 Stop-ListeningOnPort 8000
 Start-Sleep -Seconds 1
 
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONUTF8 = "1"
 $backendExe = Join-Path $projectRoot ".venv\Scripts\python.exe"
 $backendArgs = @(
     "-m",
     "uvicorn",
-    "motx_os_bridge.api.fastapi_server:app",
+    "motx_os_bridge.api.server_v2:app",
     "--host",
     "127.0.0.1",
     "--port",

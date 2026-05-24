@@ -7,6 +7,7 @@ import collections
 import io
 import base64
 import httpx
+import numpy as np
 
 logger = logging.getLogger(__name__)
 

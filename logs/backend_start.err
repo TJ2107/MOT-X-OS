@@ -1,18 +1,20 @@
-INFO:     Started server process [30648]
+INFO:     Started server process [24724]
 INFO:     Waiting for application startup.
-Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 1289.50it/s]
-MediaPipe eye tracking unavailable: MediaPipe is installed but does not expose the expected solutions module. Install a compatible mediapipe version such as mediapipe<0.10.. Eye tracking disabled.
 INFO:     Application startup complete.
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 1027.38it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 984.63it/s] 
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-Exception in callback _ProactorBasePipeTransport._call_connection_lost()
-handle: <Handle _ProactorBasePipeTransport._call_connection_lost()>
-Traceback (most recent call last):
-  File "C:\Python313\Lib\asyncio\events.py", line 89, in _run
-    self._context.run(self._callback, *self._args)
-    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python313\Lib\asyncio\proactor_events.py", line 165, in _call_connection_lost
-    self._sock.shutdown(socket.SHUT_RDWR)
-    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
-ConnectionResetError: [WinError 10054] Une connexion existante a dû être fermée par l’hôte distant
+INFO:     127.0.0.1:52631 - "WebSocket /ws/web-user-1779625730209" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:58277 - "WebSocket /ws/ambient/web-user-1779625730209" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     127.0.0.1:57023 - "WebSocket /ws/eye/web-user-1779625730209" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     127.0.0.1:52923 - "WebSocket /ws/web-user-1779625730209" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:65320 - "WebSocket /ws/ambient/web-user-1779625730209" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed
+INFO:     127.0.0.1:57664 - "WebSocket /ws/eye/web-user-1779625730209" 403
+INFO:     connection rejected (403 Forbidden)
+INFO:     connection closed

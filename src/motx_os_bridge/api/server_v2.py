@@ -69,7 +69,52 @@ multi_agent: Optional[MultiAgentSystem] = None
 analytics: Optional[EnhancedAnalytics] = None
 real_time: Optional[RealTimeSync] = None
 vision_engine: Optional[VisionEngine] = None
+eye_tracking = None
+shadow_mode = None
+semantic_rewind = None
+liquid_os = None
+black_hole = None
 active_connections: List[WebSocket] = []
+
+
+def get_eye_tracking():
+    global eye_tracking
+    if eye_tracking is None:
+        from ..plugins.eye_tracking_integrated import IntegratedEyeTracking
+        eye_tracking = IntegratedEyeTracking()
+    return eye_tracking
+
+
+def get_shadow_mode():
+    global shadow_mode
+    if shadow_mode is None:
+        from ..plugins.shadow_mode_engine import ShadowModeEngine
+        shadow_mode = ShadowModeEngine()
+    return shadow_mode
+
+
+def get_semantic_rewind():
+    global semantic_rewind
+    if semantic_rewind is None:
+        from ..plugins.semantic_rewind_engine import SemanticRewindEngine
+        semantic_rewind = SemanticRewindEngine()
+    return semantic_rewind
+
+
+def get_liquid_os():
+    global liquid_os
+    if liquid_os is None:
+        from ..plugins.liquid_os_engine import LiquidOSEngine
+        liquid_os = LiquidOSEngine()
+    return liquid_os
+
+
+def get_black_hole():
+    global black_hole
+    if black_hole is None:
+        from ..plugins.black_hole_folder import BlackHoleFolder
+        black_hole = BlackHoleFolder()
+    return black_hole
 
 
 @app.on_event("startup")
@@ -327,6 +372,55 @@ async def get_status():
         "analytics": analytics.get_summary() if analytics else {},
         "timestamp": datetime.now().isoformat()
     }
+
+
+@app.on_event("startup")
+async def startup_eye_tracking():
+    try:
+        result = await get_eye_tracking().initialize()
+        logger.info(f"Eye tracking: {result}")
+    except Exception as e:
+        logger.warning(f"Eye tracking init failed: {str(e)}")
+
+
+@app.get("/api/eye/status")
+async def get_eye_status():
+    return await get_eye_tracking().get_gaze_position()
+
+
+@app.post("/api/eye/calibrate")
+async def calibrate_eye():
+    return await get_eye_tracking().calibrate()
+
+
+@app.websocket("/ws/eye/{user_id}")
+async def eye_tracking_stream(websocket: WebSocket, user_id: str):
+    await websocket.accept()
+    while True:
+        try:
+            position = await get_eye_tracking().get_gaze_position()
+            await websocket.send_json(position)
+            await asyncio.sleep(0.05)
+        except Exception:
+            break
+
+
+@app.websocket("/ws/ambient/{user_id}")
+async def ambient_websocket(websocket: WebSocket, user_id: str):
+    await websocket.accept()
+    while True:
+        try:
+            update = {
+                "type": "ambient_update",
+                "cognitive_state": get_liquid_os().current_state.value if hasattr(get_liquid_os(), 'current_state') else None,
+                "active_workflows": len(get_shadow_mode().workflow_candidates) if hasattr(get_shadow_mode(), 'workflow_candidates') else 0,
+                "memory_size": len(get_semantic_rewind().episodic_memory) if hasattr(get_semantic_rewind(), 'episodic_memory') else 0,
+                "nexus_files": len(get_black_hole().ingested_files) if hasattr(get_black_hole(), 'ingested_files') else 0
+            }
+            await websocket.send_json(update)
+            await asyncio.sleep(5)
+        except Exception:
+            break
 
 
 @app.get("/api/agents/status")

@@ -62,45 +62,45 @@ class MultiAgentSystem:
             from .agents.agent_browser import AgentBrowser
             self.agents[AgentType.BROWSER] = AgentBrowser()
         except Exception as e:
-            print(f"⚠️ Impossible d'initialiser Agent Browser: {e}")
+            print(f"WARNING: Impossible d'initialiser Agent Browser: {e}")
         
         try:
             from .vision_engine import VisionEngine
             self.agents[AgentType.VISION] = VisionEngine()
         except Exception as e:
-            print(f"⚠️ Impossible d'initialiser Vision Engine: {e}")
+            print(f"WARNING: Impossible d'initialiser Vision Engine: {e}")
         
         try:
             from .voice_interface import VoiceInterface
             self.agents[AgentType.VOICE] = VoiceInterface()
         except Exception as e:
-            print(f"⚠️ Impossible d'initialiser Voice Interface: {e}")
+            print(f"WARNING: Impossible d'initialiser Voice Interface: {e}")
         
         try:
             from .agents.agent_security import AgentSecurity
             self.agents[AgentType.SECURITY] = AgentSecurity()
         except Exception as e:
-            print(f"⚠️ Impossible d'initialiser Agent Security: {e}")
+            print(f"WARNING: Impossible d'initialiser Agent Security: {e}")
         
         try:
             from .agents.agent_research import AgentResearch
             self.agents[AgentType.RESEARCH] = AgentResearch()
         except Exception as e:
-            print(f"⚠️ Impossible d'initialiser Agent Research: {e}")
+            print(f"WARNING: Impossible d'initialiser Agent Research: {e}")
         
         try:
             from .agents.agent_development import AgentDevelopment
             self.agents[AgentType.DEVELOPMENT] = AgentDevelopment()
         except Exception as e:
-            print(f"⚠️ Impossible d'initialiser Agent Development: {e}")
+            print(f"WARNING: Impossible d'initialiser Agent Development: {e}")
         
         try:
             from .agents.agent_monitoring import AgentMonitoring
             self.agents[AgentType.MONITORING] = AgentMonitoring()
         except Exception as e:
-            print(f"⚠️ Impossible d'initialiser Agent Monitoring: {e}")
+            print(f"WARNING: Impossible d'initialiser Agent Monitoring: {e}")
         
-        print(f"✅ {len(self.agents)} agents initialisés")
+        print(f"INFO: {len(self.agents)} agents initialises")
     
     async def dispatch_task(self, agent_type: AgentType, instruction: str, parameters: Dict[str, Any] = None) -> AgentResponse:
         """Dispatche une tâche à un agent spécifique."""

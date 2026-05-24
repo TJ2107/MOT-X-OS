@@ -16,7 +16,7 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $projectRoot = Split-Path -Parent $scriptDir
 
 function Stop-MOTXProcesses {
-    $patterns = @('src\.motx_os_bridge\.main','uvicorn motx_os_bridge.api.fastapi_server:app','src\.motx_os_bridge\.ui\.native_launcher','npm run dev','ollama')
+    $patterns = @('src\.motx_os_bridge\.main','uvicorn motx_os_bridge.api.server_v2:app','uvicorn motx_os_bridge.api.fastapi_server:app','src\.motx_os_bridge\.ui\.native_launcher','npm run dev','ollama')
     $procs = Get-CimInstance Win32_Process | Where-Object {
         $cmd = $_.CommandLine
         $cmd -and (($patterns | ForEach-Object { $cmd -match $_ }) -contains $true)
@@ -134,17 +134,18 @@ $ollama = Start-Ollama
 Write-Host "[1/2] Demarrage du Backend..." -ForegroundColor Yellow
 $env:PYTHONPATH = Join-Path $projectRoot "src"
 $env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONUTF8 = "1"
 $backendPort = 8000
 $backendLog = Join-Path $projectRoot "logs\backend_start.log"
 $backendErr = Join-Path $projectRoot "logs\backend_start.err"
 New-Item -ItemType Directory -Path (Split-Path $backendLog) -Force | Out-Null
-if (Test-Path $backendLog) { Remove-Item $backendLog -Force }
-if (Test-Path $backendErr) { Remove-Item $backendErr -Force }
+if (Test-Path $backendLog) { Remove-Item $backendLog -Force -ErrorAction SilentlyContinue }
+if (Test-Path $backendErr) { Remove-Item $backendErr -Force -ErrorAction SilentlyContinue }
 $backendExe = Join-Path $projectRoot ".venv\Scripts\python.exe"
 $backendArgs = @(
     "-m",
     "uvicorn",
-    "motx_os_bridge.api.fastapi_server:app",
+    "motx_os_bridge.api.server_v2:app",
     "--host",
     "127.0.0.1",
     "--port",
@@ -168,13 +169,18 @@ if (-not (Wait-ForPort -hostname "127.0.0.1" -port $backendPort -timeoutSec 120)
     if ($backend) { Stop-Process -Id $backend.Id -Force -ErrorAction SilentlyContinue }
     exit 1
 }
-Write-Host "   Backend socket ouvert, vérification de l'endpoint /api/status ..." -ForegroundColor Yellow
-if (-not (Wait-ForHttp -url "http://127.0.0.1:$backendPort/api/status" -timeoutSec 120)) {
-    Write-Host "   ERREUR : l'endpoint http://127.0.0.1:$backendPort/api/status n'est pas accessible." -ForegroundColor Red
-    if ($backend) { Stop-Process -Id $backend.Id -Force -ErrorAction SilentlyContinue }
-    exit 1
-}
-Write-Host "   Backend démarré et accessible sur http://127.0.0.1:$backendPort/api/status (PID: $($backend.Id))" -ForegroundColor Green
+Write-Host "   Backend socket ouvert sur http://127.0.0.1:$backendPort" -ForegroundColor Green
+
+$backendStatusMonitorOut = Join-Path $projectRoot "logs\backend_status_check.out"
+$backendStatusMonitorErr = Join-Path $projectRoot "logs\backend_status_check.err"
+$backendStatusMonitorScript = Join-Path $projectRoot "scripts\check_api_status.ps1"
+$backendStatusMonitor = Start-Process -FilePath "powershell.exe" `
+    -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "$backendStatusMonitorScript", "-Url", "http://127.0.0.1:$backendPort/api/status", "-TimeoutSec", "120" `
+    -WorkingDirectory $projectRoot `
+    -RedirectStandardOutput $backendStatusMonitorOut `
+    -RedirectStandardError $backendStatusMonitorErr `
+    -PassThru -WindowStyle Hidden
+Write-Host "   Vérification de /api/status en arrière-plan (logs: $backendStatusMonitorOut, $backendStatusMonitorErr)" -ForegroundColor Yellow
 
 # 2. Demarrer le Frontend (React)
 Write-Host "[2/2] Demarrage du Frontend..." -ForegroundColor Yellow
@@ -182,8 +188,8 @@ $frontendPort = 5173
 $frontendLog = Join-Path $projectRoot "logs\frontend_start.log"
 $frontendErr = Join-Path $projectRoot "logs\frontend_start.err"
 New-Item -ItemType Directory -Path (Split-Path $frontendLog) -Force | Out-Null
-if (Test-Path $frontendLog) { Remove-Item $frontendLog -Force }
-if (Test-Path $frontendErr) { Remove-Item $frontendErr -Force }
+if (Test-Path $frontendLog) { Remove-Item $frontendLog -Force -ErrorAction SilentlyContinue }
+if (Test-Path $frontendErr) { Remove-Item $frontendErr -Force -ErrorAction SilentlyContinue }
 $frontendCommand = "cd /d `"$projectRoot\motx-frontend`" && npm run dev -- --host 127.0.0.1 --port $frontendPort --strictPort > `"$frontendLog`" 2> `"$frontendErr`""
 Write-Host "   Frontend log: $frontendLog" -ForegroundColor Yellow
 Write-Host "   Frontend err: $frontendErr" -ForegroundColor Yellow

@@ -30,8 +30,10 @@ Stop-ListeningOnPort 5173
 # Start Backend
 Write-Host "[Backend] Starting..." -ForegroundColor Yellow
 $env:PYTHONPATH = Join-Path $projectRoot "src"
+$env:PYTHONIOENCODING = "utf-8"
+$env:PYTHONUTF8 = "1"
 $backendExe = Join-Path $projectRoot ".venv\Scripts\python.exe"
-$backendArgs = @('-m','uvicorn','motx_os_bridge.api.fastapi_server:app','--host','127.0.0.1','--port','8000','--log-level','info')
+$backendArgs = @('-m','uvicorn','motx_os_bridge.api.server_v2:app','--host','127.0.0.1','--port','8000','--log-level','info')
 $backend = Start-Process -FilePath $backendExe -ArgumentList $backendArgs -WorkingDirectory $projectRoot -PassThru -WindowStyle Normal
 Write-Host "Backend PID: $($backend.Id)" -ForegroundColor Yellow
 
