@@ -1,0 +1,44 @@
+openai
+psutil
+googletrans
+pytest
+pytest-asyncio
+fastapi
+uvicorn[standard]
+python-multipart
+
+# Agent Browser dependencies
+requests
+beautifulsoup4
+
+# Vision Engine dependencies
+Pillow
+pytesseract
+opencv-python
+mediapipe<0.10
+pyautogui
+
+# Voice Interface dependencies
+SpeechRecognition
+PyAudio
+pyttsx3
+
+# Multi-Agent System dependencies
+# (no additional dependencies beyond those above)
+
+# Ollama Local LLM dependencies
+# Note: Ollama itself is installed separately via https://ollama.ai
+# The Python client uses requests (already included above)
+
+# Advanced Features dependencies
+networkx  # Visual Cognitive Graph
+PyQt5  # Graph visualization interface
+pywebview  # Alternative web-based visualization
+watchdog  # Proactive Symbiosis file monitoring
+keyboard  # Contextual Shortcuts global hotkeys
+pyperclip  # Contextual Shortcuts clipboard access
+
+# Revolutionary Innovations dependencies
+numpy  # Cognitive Emergence & Advanced Analytics
+
+

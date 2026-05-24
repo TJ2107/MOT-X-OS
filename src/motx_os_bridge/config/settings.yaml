@@ -1,0 +1,26 @@
+application:
+  name: MOT-X OS Automation Bridge
+  version: 0.1.0
+
+security:
+  require_confirmation: true
+  allow_root_actions: false
+  allowed_paths: []
+  blocked_paths:
+    - "C:/Windows"
+    - "C:/Program Files"
+    - "C:/Program Files (x86)"
+
+api:
+  enabled: true
+  host: "127.0.0.1"
+  port: 8000
+  token: ""
+
+llm:
+  enabled: false
+  backend: "ollama_api"
+  model: "llama2"
+  prompt_timeout: 60
+  ollama_host: "localhost"
+  ollama_port: 11434

@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "motx-os-automation-bridge"
+version = "0.1.0"
+description = "MOT-X OS local automation bridge for Windows and cross-platform utility."
+readme = "docs/README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [
+  { name = "MOT-X", email = "support@motx.local" }
+]
+classifiers = [
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX"
+]
+dependencies = [
+  "psutil",
+  "googletrans",
+  "websockets",
+  "fastapi",
+  "uvicorn",
+  "python-multipart",
+  "pynput",
+  "opencv-python",
+  "numpy",
+  "chromadb",
+  "sentence-transformers",
+  "pywebview",
+  "mediapipe<0.10",
+]
+
+[project.optional-dependencies]
+test = [
+  "pytest"
+]
+
+[project.scripts]
+motx-os = "motx_os_bridge.main:run"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]

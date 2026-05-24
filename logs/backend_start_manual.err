@@ -1,0 +1,45 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 1070.99it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 2100.49it/s]
+INFO:     Started server process [33360]
+INFO:     Waiting for application startup.
+MediaPipe eye tracking unavailable: MediaPipe is installed but does not expose the expected solutions module. Install a compatible mediapipe version such as mediapipe<0.10.. Eye tracking disabled.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+Speech recognition error: recognition connection failed: [WinError 10065] Une opération a été tentée sur un hôte impossible à atteindre
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed
+Speech recognition error: recognition connection failed: [Errno 11001] getaddrinfo failed

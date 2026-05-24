@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MOT-X OS - Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #001a33 0%, #0d47a1 100%);
+      color: #e0e0e0;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+    
+    .nav-tabs {
+      display: flex;
+      gap: 10px;
+      margin: 20px;
+      flex-wrap: wrap;
+    }
+    
+    .nav-tabs button {
+      background: rgba(76, 136, 255, 0.2);
+      border: 1px solid #4c88ff;
+      color: #4c88ff;
+      padding: 10px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+    
+    .nav-tabs button:hover, .nav-tabs button.active {
+      background: #4c88ff;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(76, 136, 255, 0.6);
+    }
+    
+    .container {
+      max-width: 1400px;
+      margin: 20px auto;
+      padding: 0 20px;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .header h1 {
+      font-size: 2.5em;
+      background: linear-gradient(135deg, #4c88ff, #ff4488);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+    }
+    
+    .tab-content {
+      display: none;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    section {
+      background: rgba(20, 30, 60, 0.7);
+      border: 1px solid rgba(76, 136, 255, 0.3);
+      padding: 25px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+    
+    h2 { 
+      color: #4c88ff;
+      margin-bottom: 15px;
+      font-size: 1.5em;
+      border-left: 4px solid #4c88ff;
+      padding-left: 10px;
+    }
+    
+    button {
+      background: linear-gradient(135deg, #4c88ff, #00d9ff);
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      margin: 5px 5px 5px 0;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(76, 136, 255, 0.4);
+    }
+    
+    pre {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      border-radius: 10px;
+      overflow: auto;
+      color: #00ff00;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+      max-height: 400px;
+      border-left: 3px solid #00ff00;
+    }
+    
+    label {
+      display: block;
+      margin: 15px 0 8px;
+      color: #4c88ff;
+      font-weight: 600;
+    }
+    
+    input, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(76, 136, 255, 0.5);
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+    
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #4c88ff;
+      box-shadow: 0 0 15px rgba(76, 136, 255, 0.3);
+      background: rgba(76, 136, 255, 0.1);
+    }
+    
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .stat-card {
+      background: rgba(76, 136, 255, 0.1);
+      border: 1px solid rgba(76, 136, 255, 0.3);
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      animation: pulse 2s ease-in-out infinite;
+    }
+    
+    .stat-card h3 {
+      color: #4c88ff;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+    }
+    
+    .stat-card .value {
+      font-size: 2em;
+      color: #00ff00;
+      font-weight: bold;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+    
+    .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #ff6b9d, #c06c84);
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      margin: 5px;
+      animation: glow 2s ease-in-out infinite;
+    }
+
+    .chart-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .chart-card {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(76, 136, 255, 0.35);
+      border-radius: 14px;
+      padding: 18px;
+      min-height: 180px;
+      position: relative;
+    }
+
+    .chart-card h4 {
+      margin-bottom: 12px;
+      color: #4c88ff;
+      font-size: 1em;
+    }
+
+    .bar-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 120px 1fr 40px;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .bar-label {
+      font-size: 0.9em;
+      color: #cfd8dc;
+    }
+
+    .bar-track {
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #4c88ff, #00d9ff);
+      transition: width 0.45s ease;
+    }
+
+    .chart-metrics {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 5px rgba(255, 107, 157, 0.5); }
+      50% { box-shadow: 0 0 15px rgba(255, 107, 157, 0.8); }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🚀 MOT-X OS - Dashboard Révolutionnaire</h1>
+    <p>Système d'Automatisation Cognitif Ultra-Avancé</p>
+  </div>
+  
+  <div class="container">
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="showTab('api')">⚡ API</button>
+      <button class="tab-btn" onclick="showTab('execution')">🎯 Exécution</button>
+      <button class="tab-btn" onclick="showTab('cognitive')">🧠 Cognitif</button>
+      <button class="tab-btn" onclick="showTab('gamification')">🎮 Gamification</button>
+      <button class="tab-btn" onclick="showTab('analytics')">📊 Analytiques</button>
+      <button class="tab-btn" onclick="showTab('agents')">🤖 Agents</button>
+    </div>
+    
+    <!-- TAB: API -->
+    <div id="api" class="tab-content active">
+      <section>
+        <h2>⚡ API & Service</h2>
+        <label for="apiToken">Token API (si activé)</label>
+        <input id="apiToken" type="text" placeholder="Entrez votre token API" />
+        
+        <button onclick="fetchStatus()">✅ Vérifier l'état</button>
+        <button onclick="fetchConfig()">⚙️ Charger config</button>
+        <button onclick="fetchHistory()">📜 Historique</button>
+        <button onclick="fetchTasks()">📋 Tâches supportées</button>
+        <button onclick="fetchAgentStatus()">🤖 État des agents</button>
+        
+        <pre id="output"></pre>
+      </section>
+    </div>
+    
+    <!-- TAB: Execution -->
+    <div id="execution" class="tab-content">
+      <section>
+        <h2>🎯 Exécuter une Instruction</h2>
+        <label for="instruction">Instruction</label>
+        <textarea id="instruction" rows="3" placeholder="ex: créer un dossier 'workspace' et monitorer le CPU"></textarea>
+        <button onclick="executeInstruction()">🚀 Exécuter</button>
+        <pre id="response"></pre>
+      </section>
+    </div>
+    
+    <!-- TAB: Cognitive -->
+    <div id="cognitive" class="tab-content">
+      <section>
+        <h2>🧠 Réseau Cognitif Émergent</h2>
+        <p>💡 Votre système cognitif traite l'instruction via 8 domaines spécialisés:</p>
+        <p>Logic • Creativity • Intuition • Analysis • Synthesis • Prediction • Learning • Optimization</p>
+        
+        <label for="cognitiveInstruction">Instruction cognitive</label>
+        <textarea id="cognitiveInstruction" rows="3" placeholder="ex: optimise ma performance système et génère un rapport intelligence"></textarea>
+        <button onclick="executeCognitive()">🧠 Cycle Cognitif Complet</button>
+        
+        <pre id="cognitiveResponse"></pre>
+      </section>
+    </div>
+    
+    <!-- TAB: Gamification -->
+    <div id="gamification" class="tab-content">
+      <section>
+        <h2>🎮 Progression & Achievements</h2>
+        
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Niveau</h3>
+            <div class="value" id="playerLevel">1</div>
+          </div>
+          <div class="stat-card">
+            <h3>Expérience</h3>
+            <div class="value" id="playerXP">0/100</div>
+          </div>
+          <div class="stat-card">
+            <h3>Streaks</h3>
+            <div class="value" id="playerStreak">0</div>
+          </div>
+          <div class="stat-card">
+            <h3>Achievements</h3>
+            <div class="value" id="playerAchievements">0</div>
+          </div>
+        </div>
+        
+        <h3>🏆 Badges Débloqués</h3>
+        <div id="badgesContainer">
+          <span class="badge">🌟 Initié</span>
+        </div>
+        
+        <h3>📋 Quêtes Quotidiennes</h3>
+        <pre id="questsOutput"></pre>
+        
+        <button onclick="fetchGamificationStatus()">🎮 Charger mon profil</button>
+      </section>
+    </div>
+    
+    <!-- TAB: Analytics -->
+    <div id="analytics" class="tab-content">
+      <section>
+        <h2>📊 Analytiques Avancées & Prédictions</h2>
+        
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Automations</h3>
+            <div class="value" id="totalAutomations">0</div>
+          </div>
+          <div class="stat-card">
+            <h3>Taux Succès</h3>
+            <div class="value" id="successRate">0%</div>
+          </div>
+          <div class="stat-card">
+            <h3>Temps Gagné</h3>
+            <div class="value" id="timeSaved">0 min</div>
+          </div>
+          <div class="stat-card">
+            <h3>Insights</h3>
+            <div class="value" id="insightsGenerated">0</div>
+          </div>
+        </div>
+        
+        <h3>🔮 Prédictions & Recommandations</h3>
+        <pre id="analyticsOutput"></pre>
+        
+        <button onclick="fetchAnalytics()">📊 Charger analytiques</button>
+      </section>
+    </div>
+
+    <!-- TAB: AGENTS -->
+    <div id="agents" class="tab-content">
+      <section>
+        <h2>🤖 Agents & Métriques du Moteur</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <h3>Total Agents</h3>
+            <div class="value" id="agentTotal">0</div>
+          </div>
+          <div class="stat-card">
+            <h3>Agents Disponibles</h3>
+            <div class="value" id="agentAvailable">—</div>
+          </div>
+          <div class="stat-card">
+            <h3>Tâches actives</h3>
+            <div class="value" id="agentActive">0</div>
+          </div>
+          <div class="stat-card">
+            <h3>Tâches complétées</h3>
+            <div class="value" id="agentCompleted">0</div>
+          </div>
+        </div>
+
+        <label for="coordinateInstruction">Instruction de coordination</label>
+        <textarea id="coordinateInstruction" rows="3" placeholder="ex: coordonne les agents pour analyser le système"></textarea>
+        <button onclick="fetchAgentStatus()">🔄 Charger l'état des agents</button>
+        <button onclick="coordinateAgents()">🧩 Coordonner les agents</button>
+
+        <h3>📡 Métriques d'Engine</h3>
+        <pre id="agentMetricsOutput"></pre>
+        <pre id="agentsOutput"></pre>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ============ Gestion des Onglets ============
+    function showTab(tabName) {
+      const contents = document.querySelectorAll('.tab-content');
+      const buttons = document.querySelectorAll('.tab-btn');
+      
+      contents.forEach(c => c.classList.remove('active'));
+      buttons.forEach(b => b.classList.remove('active'));
+      
+      document.getElementById(tabName).classList.add('active');
+      event.target.classList.add('active');
+    }
+    
+    // ============ Utilitaires ============
+    function getAuthHeader() {
+      const token = document.getElementById('apiToken').value.trim();
+      return token ? { Authorization: `Bearer ${token}` } : {};
+    }
+    
+    function formatJson(data) {
+      return JSON.stringify(data, null, 2);
+    }
+
+    async function parseJsonResponse(response) {
+      const text = await response.text();
+      if (!text) {
+        return { __raw: '', __parseError: 'Empty response body', __status: response.status, __ok: response.ok };
+      }
+      try {
+        return { __body: JSON.parse(text), __status: response.status, __ok: response.ok };
+      } catch (err) {
+        return { __raw: text, __parseError: err.message, __status: response.status, __ok: response.ok };
+      }
+    }
+    
+    // ============ API Calls ============
+    async function fetchJson(path, outputId = 'output') {
+      const output = document.getElementById(outputId);
+      output.textContent = '⏳ Chargement...';
+      try {
+        const headers = getAuthHeader();
+        const res = await fetch(path, { headers });
+        const parsed = await parseJsonResponse(res);
+        if (!parsed.__ok) {
+          output.textContent = `❌ Erreur ${parsed.__status}: ${parsed.__parseError || parsed.__raw || 'Unknown error'}`;
+          return;
+        }
+        output.textContent = formatJson(parsed.__body ?? parsed.__raw);
+      } catch (err) {
+        output.textContent = '❌ Erreur: ' + err;
+      }
+    }
+    
+    async function fetchStatus() {
+      await fetchJson('/status');
+    }
+    
+    async function fetchConfig() {
+      await fetchJson('/config');
+    }
+    
+    async function fetchHistory() {
+      await fetchJson('/history');
+    }
+    
+    async function fetchTasks() {
+      await fetchJson('/tasks');
+    }
+    
+    async function fetchAgentStatus() {
+      const output = document.getElementById('agentsOutput');
+      const engineOutput = document.getElementById('agentMetricsOutput');
+      output.textContent = "⏳ Chargement de l'état des agents...";
+      engineOutput.textContent = '';
+      try {
+        const headers = getAuthHeader();
+        const res = await fetch('/agents/status', { headers });
+        const parsed = await parseJsonResponse(res);
+        if (!parsed.__ok) {
+          output.textContent = `❌ Erreur ${parsed.__status}: ${parsed.__parseError || parsed.__raw || 'Unexpected response'}`;
+          return;
+        }
+        const data = parsed.__body ?? parsed.__raw;
+        output.textContent = formatJson(data);
+        if (data.engine_metrics) {
+          engineOutput.textContent = formatJson(data.engine_metrics);
+        }
+        if (data.available_agents) {
+          document.getElementById('agentTotal').textContent = data.total_agents || 0;
+          document.getElementById('agentAvailable').textContent = data.available_agents.join(', ') || '—';
+          document.getElementById('agentActive').textContent = data.active_tasks || 0;
+          document.getElementById('agentCompleted').textContent = data.completed_tasks || 0;
+        }
+      } catch (err) {
+        output.textContent = '❌ Erreur: ' + err;
+      }
+    }
+
+    async function coordinateAgents() {
+      const instruction = document.getElementById('coordinateInstruction').value.trim();
+      const output = document.getElementById('agentsOutput');
+      const engineOutput = document.getElementById('agentMetricsOutput');
+      if (!instruction) {
+        output.textContent = '⚠️ Entrez une instruction de coordination.';
+        return;
+      }
+      output.textContent = '🔧 Coordination en cours...';
+      engineOutput.textContent = '';
+      try {
+        const headers = { 'Content-Type': 'application/json', ...getAuthHeader() };
+        const res = await fetch('/agents/coordinate', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ instruction })
+        });
+        const parsed = await parseJsonResponse(res);
+        if (!parsed.__ok) {
+          output.textContent = `❌ Erreur ${parsed.__status}: ${parsed.__parseError || parsed.__raw || 'Unexpected response'}`;
+          return;
+        }
+        const data = parsed.__body ?? parsed.__raw;
+        output.textContent = formatJson(data);
+        if (data.engine_metrics) {
+          engineOutput.textContent = formatJson(data.engine_metrics);
+        }
+      } catch (err) {
+        output.textContent = '❌ Erreur: ' + err;
+      }
+    }
+    
+    async function executeInstruction() {
+      const instruction = document.getElementById('instruction').value.trim();
+      if (!instruction) {
+        document.getElementById('response').textContent = '⚠️ Entrez une instruction.';
+        return;
+      }
+      document.getElementById('response').textContent = '🚀 Envoi...';
+      try {
+        const headers = { 'Content-Type': 'application/json', ...getAuthHeader() };
+        const res = await fetch('/execute', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ instruction })
+        });
+        const parsed = await parseJsonResponse(res);
+        if (!parsed.__ok) {
+          document.getElementById('response').textContent = `❌ Erreur ${parsed.__status}: ${parsed.__parseError || parsed.__raw || 'Unexpected response'}`;
+          return;
+        }
+        const data = parsed.__body ?? parsed.__raw;
+        document.getElementById('response').textContent = formatJson(data);
+      } catch (err) {
+        document.getElementById('response').textContent = '❌ Erreur: ' + err;
+      }
+    }
+    
+    async function executeCognitive() {
+      const instruction = document.getElementById('cognitiveInstruction').value.trim();
+      if (!instruction) {
+        document.getElementById('cognitiveResponse').textContent = '⚠️ Entrez une instruction.';
+        return;
+      }
+      document.getElementById('cognitiveResponse').textContent = '🧠 Traitement cognitif...';
+      try {
+        const headers = { 'Content-Type': 'application/json', ...getAuthHeader() };
+        const res = await fetch('/cognitive', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ instruction })
+        });
+        const parsed = await parseJsonResponse(res);
+        if (!parsed.__ok) {
+          document.getElementById('cognitiveResponse').textContent = `❌ Erreur ${parsed.__status}: ${parsed.__parseError || parsed.__raw || 'Unexpected response'}`;
+          return;
+        }
+        const data = parsed.__body ?? parsed.__raw;
+        document.getElementById('cognitiveResponse').textContent = formatJson(data);
+      } catch (err) {
+        document.getElementById('cognitiveResponse').textContent = '❌ Erreur: ' + err;
+      }
+    }
+    
+    async function fetchGamificationStatus() {
+      const output = document.getElementById('questsOutput');
+      output.textContent = '⏳ Chargement...';
+      try {
+        const res = await fetch('/gamification/profile');
+        const parsed = await parseJsonResponse(res);
+        if (!parsed.__ok) {
+          output.textContent = `❌ Erreur ${parsed.__status}: ${parsed.__parseError || parsed.__raw || 'Unexpected response'}`;
+          return;
+        }
+        const data = parsed.__body ?? parsed.__raw;
+        document.getElementById('playerLevel').textContent = data.level || 1;
+        document.getElementById('playerXP').textContent = (data.experience_points || 0) + '/100';
+        document.getElementById('playerStreak').textContent = data.streak || 0;
+        document.getElementById('playerAchievements').textContent = (data.badges || []).length;
+        output.textContent = formatJson(data);
+      } catch (err) {
+        output.textContent = '❌ Erreur: ' + err;
+      }
+    }
+    
+    async function fetchAnalytics() {
+      const output = document.getElementById('analyticsOutput');
+      const agentHealth = document.getElementById('agentHealth');
+      output.textContent = '⏳ Chargement...';
+      agentHealth.textContent = '';
+      try {
+        const headers = getAuthHeader();
+        const res = await fetch('/analytics/dashboard', { headers });
+        const parsed = await parseJsonResponse(res);
+        if (!parsed.__ok) {
+          output.textContent = `❌ Erreur ${parsed.__status}: ${parsed.__parseError || parsed.__raw || 'Unexpected response'}`;
+          return;
+        }
+        const data = parsed.__body ?? parsed.__raw;
+        if (data.overview) {
+          document.getElementById('totalAutomations').textContent = data.overview.total_automations || 0;
+          document.getElementById('successRate').textContent = Math.round(data.overview.success_rate || 0) + '%';
+          document.getElementById('timeSaved').textContent = data.overview.time_saved_estimate || '0 min';
+          document.getElementById('insightsGenerated').textContent = data.overview.insight_generated || 0;
+        }
+        output.textContent = formatJson(data);
+      } catch (err) {
+        output.textContent = '❌ Erreur: ' + err;
+      }
+
+      await fetchAgentMetrics();
+    }
+
+    async function fetchAgentMetrics() {
+      const output = document.getElementById('agentMetricsOutput');
+      const agentHealth = document.getElementById('agentHealth');
+      const barActive = document.getElementById('barActive');
+      const barPending = document.getElementById('barPending');
+      const barCompleted = document.getElementById('barCompleted');
+      const barActiveValue = document.getElementById('barActiveValue');
+      const barPendingValue = document.getElementById('barPendingValue');
+      const barCompletedValue = document.getElementById('barCompletedValue');
+
+      output.textContent = '⏳ Chargement des métriques agents...';
+      agentHealth.textContent = '';
+      try {
+        const headers = getAuthHeader();
+        const res = await fetch('/agents/status', { headers });
+        const parsed = await parseJsonResponse(res);
+        if (!parsed.__ok) {
+          output.textContent = `❌ Erreur ${parsed.__status}: ${parsed.__parseError || parsed.__raw || 'Unexpected response'}`;
+          return;
+        }
+        const data = parsed.__body ?? parsed.__raw;
+
+        output.textContent = formatJson(data.engine_metrics || data);
+        const available = data.available_agents || [];
+        const total = data.total_agents || available.length || 1;
+
+        agentHealth.innerHTML = `<div class="bar-row"><span class="bar-label">Agents disponibles</span><span class="value">${available.join(', ') || 'Aucun'}</span></div>`;
+
+        const active = data.active_tasks || 0;
+        const pending = data.pending_tasks || 0;
+        const completed = data.completed_tasks || 0;
+        const maxValue = Math.max(active, pending, completed, 1);
+
+        const activePct = Math.round((active / maxValue) * 100);
+        const pendingPct = Math.round((pending / maxValue) * 100);
+        const completedPct = Math.round((completed / maxValue) * 100);
+
+        barActive.style.width = activePct + '%';
+        barPending.style.width = pendingPct + '%';
+        barCompleted.style.width = completedPct + '%';
+
+        barActiveValue.textContent = active;
+        barPendingValue.textContent = pending;
+        barCompletedValue.textContent = completed;
+      } catch (err) {
+        output.textContent = '❌ Erreur: ' + err;
+        agentHealth.textContent = 'Impossible de charger les métriques agents.';
+      }
+    }
+    
+    // Charger le profil gamification au démarrage
+    window.addEventListener('load', () => {
+      fetchGamificationStatus();
+    });
+  </script>
+</body>
+</html>

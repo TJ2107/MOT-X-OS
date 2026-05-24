@@ -1,0 +1,4 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 6574.94it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights:  83%|########3 | 86/103 [00:00<00:00, 838.90it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 899.72it/s]
+MediaPipe eye tracking unavailable: MediaPipe is installed but does not expose the expected solutions module. Eye tracking disabled.

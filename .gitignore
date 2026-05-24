@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyd
+*.pdb
+*.egg-info/
+.eggs/
+venv/
+ENV/
+env/
+.python-version
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# System
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.swp
+
+# Local configuration
+src/motx_os_bridge/config/*.json
