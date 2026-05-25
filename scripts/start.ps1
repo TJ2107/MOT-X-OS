@@ -174,7 +174,7 @@ Write-Host "   Backend socket ouvert sur http://127.0.0.1:$backendPort" -Foregro
 $backendStatusMonitorOut = Join-Path $projectRoot "logs\backend_status_check.out"
 $backendStatusMonitorErr = Join-Path $projectRoot "logs\backend_status_check.err"
 $backendStatusMonitorScript = Join-Path $projectRoot "scripts\check_api_status.ps1"
-$backendStatusMonitor = Start-Process -FilePath "powershell.exe" `
+Get-Content -Path "logs\frontend_start.log" -Wait -Tail 50 = Start-Process -FilePath "powershell.exe" `
     -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "$backendStatusMonitorScript", "-Url", "http://127.0.0.1:$backendPort/api/status", "-TimeoutSec", "120" `
     -WorkingDirectory $projectRoot `
     -RedirectStandardOutput $backendStatusMonitorOut `
