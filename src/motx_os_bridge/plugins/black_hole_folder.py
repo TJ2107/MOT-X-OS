@@ -47,6 +47,8 @@ class BlackHoleFolder:
             logger.warning(f"⚠️ SentenceTransformer failed to load for BlackHoleFolder: {e}")
 
         self.rejected_files = [] # Historique RAM des fichiers rejetés par sécurité
+        self.watching_enabled = False
+        self.recovery_count = 0
         
     @property
     def ingested_files(self) -> List[str]:
@@ -57,9 +59,10 @@ class BlackHoleFolder:
     
     async def watch_nexus_folder(self) -> None:
         logger.info("👁️ Black Hole Folder watching started...")
+        self.watching_enabled = True
         existing_files = set(os.listdir(self.nexus_path)) if os.path.exists(self.nexus_path) else set()
         
-        while True:
+        while self.watching_enabled:
             try:
                 current_files = set(os.listdir(self.nexus_path))
                 new_files = current_files - existing_files
@@ -138,6 +141,26 @@ class BlackHoleFolder:
         if self.collection is None:
             logger.error("ChromaDB non disponible")
             return []
+
+        if not (query or "").strip():
+            try:
+                stored = self.collection.get()
+                ids = stored.get("ids") or []
+                metadatas = stored.get("metadatas") or []
+                documents = stored.get("documents") or []
+                return [
+                    {
+                        "file_id": ids[i],
+                        "filename": (metadatas[i] or {}).get("original_filename", "Unknown"),
+                        "similarity": 1.0,
+                        "preview": (documents[i] or "")[:500],
+                        "can_retrieve": True,
+                    }
+                    for i in range(min(len(ids), 20))
+                ]
+            except Exception as e:
+                logger.error(f"List nexus files error: {str(e)}")
+                return []
 
         try:
             query_vector = await self._vectorize_content(query)

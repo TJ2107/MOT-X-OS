@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 import asyncio
 import json
 import logging
+import re
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,6 +46,16 @@ class AgentCoordinationRequest(BaseModel):
 class VisionRequest(BaseModel):
     image_path: str
     task: str = "ocr"
+
+
+class CommandRequest(BaseModel):
+    command: str
+    user_id: str = "default"
+
+
+class AgentToggleRequest(BaseModel):
+    agent_id: str
+    active: bool
 
 
 app = FastAPI(
@@ -136,6 +147,175 @@ def get_black_hole():
     return black_hole
 
 
+def _format_command_message(payload: Any) -> str:
+    if payload is None:
+        return "Aucun résultat"
+    if isinstance(payload, str):
+        return payload
+    try:
+        return json.dumps(payload, ensure_ascii=False, indent=2, default=str)
+    except (TypeError, ValueError):
+        return str(payload)
+
+
+COMMAND_TIMEOUT_SEC = 45
+NEXUS_RECOVER_DELAY_SEC = 3.2
+
+
+def _nexus_recover_preamble(recovery_index: int) -> str:
+    lines = [
+        "══════════════════════════════════════════════════════",
+        "  ⛔ AVERTISSEMENT NEXUS — RÉCUPÉRATION DÉCONSEILLÉE",
+        "══════════════════════════════════════════════════════",
+        "",
+        "Ce fichier a été absorbé volontairement dans le vide.",
+        "Le Black Hole existe pour que vous ne triiez plus — pas pour",
+        "récupérer à la légère ce que vous aviez décidé d'oublier.",
+        "",
+        "Forcer une extraction :",
+        "  • perturbe la mémoire vectorielle du Nexus,",
+        "  • récompense la désorganisation,",
+        "  • peut corrompre l'aperçu sémantique des autres archives.",
+        "",
+        "Si vous n'êtes pas certain, fermez ce terminal et utilisez",
+        "uniquement nexus.search() pour CONSULTER sans extraire.",
+    ]
+    if recovery_index >= 2:
+        lines.extend([
+            "",
+            f"⚡ Récupération n°{recovery_index} sur cette session.",
+            "   Votre discipline de classement se dégrade mesurablement.",
+        ])
+    if recovery_index >= 4:
+        lines.extend([
+            "",
+            "🛑 SEUIL NEXUS FRANCHI — le trou noir se refermera plus vite",
+            "   sur vos prochains dépôts. Réfléchissez avant de réessayer.",
+        ])
+    lines.extend(["", "Extraction en cours malgré votre insistance…", ""])
+    return "\n".join(lines)
+
+
+async def _execute_nexus_recover(file_id: str) -> Dict[str, Any]:
+    hole = get_black_hole()
+    hole.recovery_count += 1
+    recovery_index = hole.recovery_count
+    preamble = _nexus_recover_preamble(recovery_index)
+
+    await asyncio.sleep(NEXUS_RECOVER_DELAY_SEC)
+    result = await hole.retrieve_file(file_id)
+
+    if result.get("status") == "restored":
+        footer = [
+            "",
+            "══ RÉSULTAT : EXTRACTION FORCÉE ══",
+            f"📤 « {result.get('filename', '?')} » a été arraché au vide.",
+            f"📁 Chemin : {result.get('path', '~/MOT-X_Nexus')}",
+            "",
+            "Ce fichier pourrait être réabsorbé si vous le laissez dans le Nexus.",
+            "Ne déposez plus ce que vous n'êtes pas prêt à perdre.",
+        ]
+        return {
+            "success": True,
+            "message": preamble + "\n".join(footer),
+            "data": {
+                **result,
+                "effect": "nexus_recover",
+                "recovery_index": recovery_index,
+                "dissuasive": True,
+            },
+        }
+
+    footer = [
+        "",
+        "══ ÉCHEC — LE NEXUS REFUSE DE RELÂCHER ══",
+        result.get("message") or result.get("error") or "Identifiant introuvable.",
+        "",
+        "C'est peut‑être un signe. Laissez ce fichier dans l'oubli.",
+        "Utilisez nexus.search('…') pour retrouver l'ID correct.",
+    ]
+    return {
+        "success": False,
+        "message": preamble + "\n".join(footer),
+        "data": {
+            **result,
+            "effect": "nexus_recover_denied",
+            "recovery_index": recovery_index,
+            "dissuasive": True,
+        },
+    }
+
+
+async def dispatch_terminal_command(command: str) -> Dict[str, Any]:
+    """Route les commandes du terminal UI (ex. system.status())."""
+    cmd = (command or "").strip().rstrip(";")
+    if not cmd:
+        return {"success": False, "message": "Commande vide"}
+
+    async def _run() -> Dict[str, Any]:
+        if cmd == "system.status()":
+            status = await get_status()
+            return {"success": True, "message": _format_command_message(status), "data": status}
+
+        if cmd == "shadow.start()":
+            result = await get_shadow_mode().start_shadow_mode()
+            return {"success": True, "message": _format_command_message(result), "data": result}
+
+        if cmd == "shadow.stop()":
+            result = await get_shadow_mode().stop_shadow_mode()
+            return {"success": True, "message": _format_command_message(result), "data": result}
+
+        nexus_match = re.fullmatch(r"nexus\.search\((['\"])(.*)\1\)", cmd)
+        if nexus_match:
+            query = nexus_match.group(2)
+            result = await get_black_hole().semantic_search_files(query)
+            return {"success": True, "message": _format_command_message(result), "data": result}
+
+        recover_match = re.fullmatch(r"nexus\.recover\((['\"])([^'\"]+)\1\)", cmd)
+        if recover_match:
+            file_id = recover_match.group(2).strip()
+            if not file_id:
+                return {
+                    "success": False,
+                    "message": "⛔ file_id requis. Trouvez-le via nexus.search('mot-clé').",
+                    "data": {"effect": "nexus_recover_denied"},
+                }
+            return await _execute_nexus_recover(file_id)
+
+        if cmd == "cognitive.detect()":
+            liquid = get_liquid_os()
+            await liquid.detect_cognitive_state({})
+            payload = await liquid.get_activity_snapshot()
+            payload["current_state"] = liquid.current_state.value
+            return {"success": True, "message": _format_command_message(payload), "data": payload}
+
+        if cmd == "rewind.capture()":
+            result = await get_semantic_rewind().record_episode({"app": "MOT-X", "text": "capture manuelle"})
+            return {"success": True, "message": _format_command_message(result), "data": result}
+
+        if cmd == "agents.list()":
+            payload = await get_agents_status()
+            return {"success": True, "message": _format_command_message(payload), "data": payload}
+
+        if not engine:
+            return {"success": False, "message": "Moteur d'automatisation indisponible"}
+
+        result = await engine.process_instruction(cmd)
+        return {"success": True, "message": _format_command_message(result), "data": result}
+
+    try:
+        return await asyncio.wait_for(_run(), timeout=COMMAND_TIMEOUT_SEC)
+    except asyncio.TimeoutError:
+        logger.warning("Commande terminal expirée (%ss): %s", COMMAND_TIMEOUT_SEC, cmd)
+        return {
+            "success": False,
+            "message": f"Délai dépassé ({COMMAND_TIMEOUT_SEC}s). Le serveur est peut‑être occupé — réessayez.",
+        }
+    except Exception as e:
+        logger.error(f"Commande terminal échouée ({cmd}): {e}")
+        return {"success": False, "message": str(e)}
+
+
 @app.on_event("startup")
 async def startup_event():
     global engine, multi_agent, analytics, real_time, vision_engine
@@ -158,6 +338,9 @@ async def startup_event():
         logger.info("✅ Vision engine initialisé")
 
         logger.info("🎉 MOT-X v2 prêt !")
+        from .ui_agents import ensure_black_hole_watch
+        asyncio.create_task(ensure_black_hole_watch())
+        asyncio.create_task(_ui_agents_broadcaster_loop())
     except Exception as e:
         logger.error(f"❌ Erreur startup: {str(e)}")
         raise
@@ -214,6 +397,23 @@ async def get_config():
     }
 
 
+async def _ui_agents_broadcaster_loop() -> None:
+    from .ui_agents import build_ui_agents_snapshot
+    while True:
+        try:
+            for agent in await build_ui_agents_snapshot():
+                await broadcast_update({
+                    "type": "agent_update",
+                    "agent_id": agent["id"],
+                    "active": agent["active"],
+                    "stat": agent["stat"],
+                    "score": agent["score"],
+                })
+        except Exception as exc:
+            logger.debug("UI agents broadcaster: %s", exc)
+        await asyncio.sleep(5)
+
+
 async def broadcast_update(message: Dict[str, Any]):
     disconnected: List[WebSocket] = []
     for connection in list(active_connections):
@@ -254,6 +454,18 @@ async def _dispatch_agent(agent_name: str, instruction: str, user_id: str) -> Di
         raise HTTPException(status_code=500, detail="Multi-agent system unavailable")
     response = await multi_agent.dispatch_task(agent_type, instruction, {"action": "auto", "user_id": user_id})
     return asdict(response)
+
+
+@app.post("/api/command")
+async def run_terminal_command(request: CommandRequest):
+    outcome = await dispatch_terminal_command(request.command)
+    return {
+        "command": request.command,
+        "success": outcome.get("success", False),
+        "message": outcome.get("message", ""),
+        "data": outcome.get("data"),
+        "timestamp": datetime.now().isoformat(),
+    }
 
 
 @app.post("/api/execute")
@@ -424,17 +636,31 @@ async def eye_tracking_stream(websocket: WebSocket, user_id: str):
             break
 
 
+@app.get("/api/cognitive/snapshot")
+async def get_cognitive_snapshot():
+    liquid = get_liquid_os()
+    await liquid.detect_cognitive_state({})
+    snapshot = await liquid.get_activity_snapshot()
+    return {**snapshot, "timestamp": datetime.now().isoformat()}
+
+
 @app.websocket("/ws/ambient/{user_id}")
 async def ambient_websocket(websocket: WebSocket, user_id: str):
     await websocket.accept()
     while True:
         try:
+            liquid = get_liquid_os()
+            snapshot = await liquid.get_activity_snapshot()
+            await liquid.detect_cognitive_state(snapshot)
             update = {
                 "type": "ambient_update",
-                "cognitive_state": get_liquid_os().current_state.value if hasattr(get_liquid_os(), 'current_state') else None,
+                "cognitive_state": snapshot.get("cognitive_state"),
+                "foreground_app": snapshot.get("foreground_app"),
+                "detected_apps": snapshot.get("detected_apps", []),
+                "confidence": snapshot.get("confidence", 0),
                 "active_workflows": len(get_shadow_mode().workflow_candidates) if hasattr(get_shadow_mode(), 'workflow_candidates') else 0,
                 "memory_size": len(get_semantic_rewind().episodic_memory) if hasattr(get_semantic_rewind(), 'episodic_memory') else 0,
-                "nexus_files": len(get_black_hole().ingested_files) if hasattr(get_black_hole(), 'ingested_files') else 0
+                "nexus_files": len(get_black_hole().ingested_files) if hasattr(get_black_hole(), 'ingested_files') else 0,
             }
             await websocket.send_json(update)
             await asyncio.sleep(5)
@@ -450,6 +676,31 @@ async def get_agents_status():
         "completed_tasks": [asdict(t) for t in multi_agent.completed_tasks] if multi_agent else [],
         "timestamp": datetime.now().isoformat()
     }
+
+
+@app.get("/api/agents/ui")
+async def get_ui_agents():
+    from .ui_agents import build_ui_agents_snapshot
+    agents = await build_ui_agents_snapshot()
+    return {"agents": agents, "timestamp": datetime.now().isoformat()}
+
+
+@app.post("/api/agents/toggle")
+async def toggle_ui_agent_route(request: AgentToggleRequest):
+    from .ui_agents import toggle_ui_agent
+    result = await toggle_ui_agent(request.agent_id, request.active)
+    if result.get("success") and result.get("agents"):
+        for agent in result["agents"]:
+            await broadcast_update({
+                "type": "agent_update",
+                "agent_id": agent["id"],
+                "active": agent["active"],
+                "stat": agent["stat"],
+                "score": agent["score"],
+            })
+    if not result.get("success"):
+        raise HTTPException(status_code=400, detail=result.get("message", "Échec du basculement"))
+    return {**result, "timestamp": datetime.now().isoformat()}
 
 
 @app.get("/api/analytics/dashboard")
@@ -491,6 +742,30 @@ async def get_memory():
     }
 
 
+async def _ws_send_execution_result(
+    websocket: WebSocket,
+    command: str,
+    outcome: Dict[str, Any],
+    request_id: Optional[str] = None,
+) -> None:
+    try:
+        await websocket.send_json({
+            "type": "execution_result",
+            "command": command,
+            "request_id": request_id,
+            "success": outcome.get("success", False),
+            "message": outcome.get("message", ""),
+            "data": outcome.get("data"),
+        })
+    except Exception as exc:
+        logger.debug("Impossible d'envoyer execution_result: %s", exc)
+
+
+async def _ws_handle_run_command(websocket: WebSocket, command: str, request_id: Optional[str]) -> None:
+    outcome = await dispatch_terminal_command(command)
+    await _ws_send_execution_result(websocket, command, outcome, request_id)
+
+
 @app.websocket("/ws/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, user_id: str):
     await websocket.accept()
@@ -507,9 +782,14 @@ async def websocket_endpoint(websocket: WebSocket, user_id: str):
         while True:
             data = await websocket.receive_json()
             message_type = data.get("type")
-            if message_type == "execute":
-                result = await engine.process_instruction(data.get("instruction"), data.get("user_id", user_id))
-                await websocket.send_json({"type": "execution_result", "data": result})
+            if message_type == "run_command":
+                command = data.get("command", "")
+                request_id = data.get("request_id")
+                asyncio.create_task(_ws_handle_run_command(websocket, command, request_id))
+            elif message_type == "execute":
+                instruction = data.get("instruction", "")
+                request_id = data.get("request_id")
+                asyncio.create_task(_ws_handle_run_command(websocket, instruction, request_id))
             elif message_type == "cognitive":
                 if engine and hasattr(engine, "cognitive_network"):
                     cognitive_result = await engine.cognitive_network.process_with_emergence(data.get("instruction"))

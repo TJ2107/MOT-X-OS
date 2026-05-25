@@ -16,6 +16,7 @@ class EnhancedVoiceEngine:
         self.is_listening = False
         self.last_transcript = None
         self.voice_model = None
+        self.commands_processed = 0
     
     async def initialize(self) -> Dict:
         """Initialise le moteur vocal"""
@@ -116,8 +117,7 @@ class EnhancedVoiceEngine:
     
     async def _process_voice_command(self, transcript: str) -> None:
         """Traite une commande vocale"""
-        
-        # Intégrer avec le Look & Do engine pour résoudre les références spatiales
+        self.commands_processed += 1
         logger.info(f"Processing voice command: '{transcript}'")
         
         # À connecter avec look_and_do.process_multimodal_command()

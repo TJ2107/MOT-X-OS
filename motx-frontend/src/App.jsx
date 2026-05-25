@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   Activity, Zap, Cpu, Bot, BarChart2, Eye,
   CheckCircle, Clock, Database, Mic, Play,
@@ -41,6 +41,25 @@ const CSS = `
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.35} }
   @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
   @keyframes ripple { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(2.2);opacity:0} }
+  @keyframes nexusShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(3px)} }
+  @keyframes nexusPulse { 0%,100%{box-shadow:0 0 0 rgba(239,68,68,0)} 50%{box-shadow:0 0 28px rgba(239,68,68,.35)} }
+
+  .log-line.nexus-recover-entry {
+    animation: nexusShake .55s ease, nexusPulse 2s ease 2;
+    margin: 14px 0 18px;
+    padding: 14px 16px 14px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(239,68,68,.35);
+    border-left: 4px solid #EF4444;
+    background: linear-gradient(90deg, rgba(239,68,68,.12) 0%, rgba(15,23,42,.4) 55%);
+  }
+  .log-line.nexus-recover-entry .nexus-out {
+    white-space: pre-wrap;
+    color: rgba(252,165,165,.88);
+    font-size: 11px;
+    line-height: 1.55;
+    margin-top: 8px;
+  }
 
   .nav-item { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; cursor:pointer; transition:all .2s ease; color:rgba(226,232,240,.4); font-size:14px; border:1px solid transparent; user-select:none; }
   .nav-item:hover { background:rgba(255,255,255,.05); color:rgba(226,232,240,.85); transform:translateX(3px); }
@@ -133,12 +152,26 @@ const COG_STATES = [
 ];
 
 const AGENTS_INIT = [
-  { id:"blackhole", name:"Black Hole",       desc:"Ingestion & vectorisation de fichiers", Icon:Database,   color:"#60A5FA", stat:"0 fichiers",    active:false },
-  { id:"shadow",    name:"Shadow Mode",      desc:"Observation silencieuse & workflows",   Icon:Eye,        color:"#A78BFA", stat:"0 captures",    active:false },
-  { id:"voice",     name:"Voice Engine",     desc:"Whisper + fallback Google Speech",      Icon:Mic,        color:"#34D399", stat:"0 commandes",   active:false },
-  { id:"eyetrack",  name:"Eye Tracking",     desc:"MediaPipe · Look & Do interface",       Icon:Scan,       color:"#F472B6", stat:"Non calibré",   active:false },
-  { id:"rewind",    name:"Semantic Rewind",  desc:"Mémoire épisodique temporelle",         Icon:RotateCcw,  color:"#FBBF24", stat:"0 épisodes",    active:false },
+  { id:"blackhole", name:"Black Hole",       desc:"Ingestion & vectorisation de fichiers", Icon:Database,   color:"#60A5FA", stat:"0 fichiers",    score:0, active:false },
+  { id:"shadow",    name:"Shadow Mode",      desc:"Observation silencieuse & workflows",   Icon:Eye,        color:"#A78BFA", stat:"0 captures",    score:0, active:false },
+  { id:"voice",     name:"Voice Engine",     desc:"Whisper + fallback Google Speech",      Icon:Mic,        color:"#34D399", stat:"0 commandes",   score:0, active:false },
+  { id:"eyetrack",  name:"Eye Tracking",     desc:"MediaPipe · Look & Do interface",       Icon:Scan,       color:"#F472B6", stat:"Non calibré",   score:0, active:false },
+  { id:"rewind",    name:"Semantic Rewind",  desc:"Mémoire épisodique temporelle",         Icon:RotateCcw,  color:"#FBBF24", stat:"0 épisodes",    score:0, active:false },
 ];
+
+const mergeUiAgents = (remoteAgents) => {
+  if (!Array.isArray(remoteAgents)) return AGENTS_INIT;
+  return AGENTS_INIT.map((template) => {
+    const remote = remoteAgents.find((item) => item.id === template.id);
+    if (!remote) return template;
+    return {
+      ...template,
+      active: Boolean(remote.active),
+      stat: remote.stat ?? template.stat,
+      score: typeof remote.score === "number" ? remote.score : template.score,
+    };
+  });
+};
 
 const WEEK_DATA = [
   { day:"Lun", execs:14, success:13, latency:0.7, agents:2 },
@@ -344,8 +377,8 @@ function ExecutionTab({ run, executionLog, onRunCommand }) {
     onRunCommand(c);
   };
 
-  const statusColor = { ok:"#10B981", error:"#EF4444", pending:"#F59E0B" };
-  const statusIcon  = { ok:"✓", error:"✕", pending:"●" };
+  const statusColor = { ok:"#10B981", error:"#EF4444", pending:"#F59E0B", warn:"#F97316" };
+  const statusIcon  = { ok:"✓", error:"✕", pending:"●", warn:"⚠" };
 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:14, height:"100%" }}>
@@ -357,19 +390,22 @@ function ExecutionTab({ run, executionLog, onRunCommand }) {
       <div style={{ display:"flex", gap:14, flex:1, minHeight:0 }}>
         <div className="glass" style={{ flex:1, display:"flex", flexDirection:"column", overflow:"hidden", minHeight:0 }}>
           <div ref={logRef} style={{ flex:1, overflow:"auto", padding:"22px 26px" }}>
-            {executionLog.map(e => (
-              <div key={e.id} className="log-line">
+            {executionLog.map(e => {
+              const isNexusRecover = e.effect === "nexus_recover" || e.effect === "nexus_recover_denied";
+              const lineStatus = e.status || "pending";
+              return (
+              <div key={e.id} className={`log-line${isNexusRecover ? " nexus-recover-entry" : ""}`}>
                 <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                   <span style={{ fontSize:10, color:"rgba(226,232,240,.22)", fontFamily:"monospace", flexShrink:0 }}>{e.time}</span>
-                  <span style={{ color:"#60A5FA", fontFamily:"monospace", fontWeight:600 }}>$</span>
+                  <span style={{ color: isNexusRecover ? "#F87171" : "#60A5FA", fontFamily:"monospace", fontWeight:600 }}>$</span>
                   <span style={{ color:"#E2E8F0", fontFamily:"'JetBrains Mono',monospace", fontSize:13 }}>{e.cmd}</span>
-                  <span style={{ color:statusColor[e.status], fontSize:12, marginLeft:4 }}>{statusIcon[e.status]}</span>
+                  <span style={{ color:statusColor[lineStatus] || statusColor.pending, fontSize:12, marginLeft:4 }}>{statusIcon[lineStatus] || statusIcon.pending}</span>
                 </div>
-                <div style={{ color:"rgba(226,232,240,.45)", fontSize:12, fontFamily:"'JetBrains Mono',monospace", marginLeft:62, marginTop:3 }}>
-                  → {e.out}
+                <div className={isNexusRecover ? "nexus-out" : ""} style={!isNexusRecover ? { color:"rgba(226,232,240,.45)", fontSize:12, fontFamily:"'JetBrains Mono',monospace", marginLeft:62, marginTop:3 } : { marginLeft:4 }}>
+                  {isNexusRecover ? e.out : `→ ${e.out}`}
                 </div>
               </div>
-            ))}
+            );})}
           </div>
           <div style={{ padding:"14px 22px", borderTop:"1px solid rgba(255,255,255,.06)", display:"flex", alignItems:"center", gap:10, background:"rgba(255,255,255,.02)" }}>
             <span style={{ color:"#60A5FA", fontFamily:"monospace", fontSize:16, fontWeight:700 }}>$</span>
@@ -378,7 +414,7 @@ function ExecutionTab({ run, executionLog, onRunCommand }) {
               value={cmd}
               onChange={e => setCmd(e.target.value)}
               onKeyDown={e => e.key === "Enter" && doRun()}
-              placeholder="shadow.start() · nexus.search() · cognitive.detect()…"
+              placeholder="nexus.search('mot-clé') · nexus.recover('id') déconseillé…"
             />
             <button className="btn primary sm" onClick={() => doRun()}><Send size={12} strokeWidth={1.5}/></button>
           </div>
@@ -387,6 +423,9 @@ function ExecutionTab({ run, executionLog, onRunCommand }) {
         <div style={{ width:220, display:"flex", flexDirection:"column", gap:12 }}>
           <div className="glass" style={{ padding:20, flex:1, overflow:"auto" }}>
             <SLabel>Raccourcis</SLabel>
+            <div style={{ fontSize:10, color:"rgba(252,165,165,.45)", lineHeight:1.45, marginBottom:10, padding:"8px 10px", borderRadius:8, border:"1px solid rgba(239,68,68,.15)", background:"rgba(239,68,68,.06)" }}>
+              Récupération : <code style={{ fontSize:10 }}>nexus.recover('file_id')</code> uniquement au terminal — procédure dissuasive, pas de raccourci.
+            </div>
             {QUICK_CMDS.map(({ label, cmd: c }) => (
               <div key={c} className="shortcut-row" onClick={() => doRun(c)}>
                 <span style={{ fontSize:12, color:"rgba(226,232,240,.6)" }}>{label}</span>
@@ -416,19 +455,25 @@ function ExecutionTab({ run, executionLog, onRunCommand }) {
 }
 
 function CognitifTab({ ambientUpdate, eyeGaze, connected, ambientConnected, eyeConnected }) {
-  const [active, setActive] = useState("CODING");
+  const [active, setActive] = useState("FOCUS");
+  const [manualOverride, setManualOverride] = useState(false);
   const current = COG_STATES.find(s => s.id === active);
 
   useEffect(() => {
-    if (ambientUpdate?.cognitive_state) {
-      const candidate = ambientUpdate.cognitive_state.toString().toUpperCase();
-      if (COG_STATES.some(s => s.id === candidate)) {
-        setActive(candidate);
-      }
+    if (manualOverride || !ambientUpdate?.cognitive_state) return;
+    const candidate = ambientUpdate.cognitive_state.toString().toUpperCase();
+    if (COG_STATES.some(s => s.id === candidate)) {
+      setActive(candidate);
     }
-  }, [ambientUpdate]);
+  }, [ambientUpdate, manualOverride]);
 
-  const detectedState = ambientUpdate?.cognitive_state ? ambientUpdate.cognitive_state.toString().toUpperCase() : "N/A";
+  const detectedState = ambientUpdate?.cognitive_state
+    ? ambientUpdate.cognitive_state.toString().toUpperCase()
+    : "N/A";
+  const detectedApps = Array.isArray(ambientUpdate?.detected_apps) && ambientUpdate.detected_apps.length > 0
+    ? ambientUpdate.detected_apps
+    : (ambientUpdate?.foreground_app ? [ambientUpdate.foreground_app] : []);
+  const confidencePct = Math.round((ambientUpdate?.confidence ?? 0) * 100);
   const gazePosition = eyeGaze ? `x:${Math.round(eyeGaze.x ?? 0)} y:${Math.round(eyeGaze.y ?? 0)}${eyeGaze.z != null ? ` z:${Math.round(eyeGaze.z)}` : ''}` : "Aucun flux";
 
   return (
@@ -457,7 +502,7 @@ function CognitifTab({ ambientUpdate, eyeGaze, connected, ambientConnected, eyeC
             <div
               key={id}
               className={`cog-btn${on ? " active" : ""}`}
-              onClick={() => setActive(id)}
+              onClick={() => { setManualOverride(true); setActive(id); }}
               style={on ? { borderColor: color, background: `${color}12` } : {}}
             >
               <div style={{
@@ -498,26 +543,33 @@ function CognitifTab({ ambientUpdate, eyeGaze, connected, ambientConnected, eyeC
             <div style={{ fontSize:11, color:"rgba(226,232,240,.3)", marginBottom:8 }}>Confiance détection</div>
             <div style={{ height:6, borderRadius:3, background:"rgba(255,255,255,.06)", overflow:"hidden" }}>
               <div style={{
-                height:"100%", borderRadius:3, width:"72%",
+                height:"100%", borderRadius:3, width:`${Math.max(confidencePct, 4)}%`,
                 background:`linear-gradient(90deg, ${current.color}88, ${current.color})`,
-                transition:"background .4s ease",
+                transition:"width .4s ease, background .4s ease",
                 boxShadow:`0 0 8px ${current.color}44`
               }}/>
             </div>
-            <div style={{ fontSize:12, color:current.color, marginTop:6, fontFamily:"monospace", fontWeight:600, transition:"color .3s" }}>72%</div>
+            <div style={{ fontSize:12, color:current.color, marginTop:6, fontFamily:"monospace", fontWeight:600, transition:"color .3s" }}>{confidencePct}%</div>
           </div>
         </div>
 
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
           <div className="glass" style={{ padding:22, flex:1 }}>
-            <SLabel>Applications détectées</SLabel>
+            <SLabel>Fenêtre active (temps réel)</SLabel>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {current.apps.map(app => (
+              {detectedApps.length > 0 ? detectedApps.map(app => (
                 <div key={app} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 12px", borderRadius:10, background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.05)" }}>
                   <div style={{ width:7, height:7, borderRadius:"50%", background:current.color, boxShadow:`0 0 6px ${current.color}66` }}/>
                   <span style={{ fontSize:13, color:"rgba(226,232,240,.65)" }}>{app}</span>
                 </div>
-              ))}
+              )) : (
+                <div style={{ fontSize:12, color:"rgba(226,232,240,.4)", padding:"8px 0" }}>
+                  Aucune fenêtre détectée — placez l'app à analyser au premier plan.
+                </div>
+              )}
+            </div>
+            <div style={{ marginTop:12, fontSize:11, color:"rgba(226,232,240,.32)", lineHeight:1.5 }}>
+              Profil « {current.label} » : {current.apps.join(", ")} (exemples, pas vos apps ouvertes).
             </div>
             <div style={{ marginTop:16, padding:14, borderRadius:12, background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,255,255,.06)" }}>
               <div style={{ fontSize:11, color:"rgba(226,232,240,.4)", marginBottom:8 }}>Détection en direct</div>
@@ -541,12 +593,13 @@ function CognitifTab({ ambientUpdate, eyeGaze, connected, ambientConnected, eyeC
                 style={{ width:"100%", justifyContent:"center" }}
                 onClick={() => {
                   if (ambientUpdate?.cognitive_state) {
+                    setManualOverride(false);
                     setActive(ambientUpdate.cognitive_state.toString().toUpperCase());
                   }
                 }}
                 disabled={!ambientUpdate?.cognitive_state}
               >
-                <RefreshCw size={12} strokeWidth={1.5}/> Appliquer l'état détecté
+                <RefreshCw size={12} strokeWidth={1.5}/> Suivre la détection auto
               </button>
             </div>
           </div>
@@ -573,7 +626,7 @@ function AgentsTab({ agents, onToggleAgent }) {
       </div>
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-        {agents.map(({ id, name, desc, Icon, color, stat, active }, i) => (
+        {agents.map(({ id, name, desc, Icon, color, stat, score, active }, i) => (
           <div key={id} className="agent-card" style={{ animationDelay:`${i * 0.07}s`, ...(active?{ borderColor:`${color}28`, boxShadow:`0 0 20px ${color}0d` }:{}) }}>
             <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:16 }}>
               <div style={{ display:"flex", alignItems:"center", gap:12 }}>
@@ -598,9 +651,15 @@ function AgentsTab({ agents, onToggleAgent }) {
               />
             </div>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", paddingTop:12, borderTop:"1px solid rgba(255,255,255,.05)" }}>
-              <span style={{ fontSize:12, fontFamily:"'JetBrains Mono',monospace", color: active ? color : "rgba(226,232,240,.28)" }}>
-                {stat}
-              </span>
+              <div style={{ display:"flex", flexDirection:"column", gap:4 }}>
+                <span style={{ fontSize:11, color:"rgba(226,232,240,.35)", letterSpacing:"0.08em", textTransform:"uppercase" }}>Score</span>
+                <span style={{ fontSize:20, fontWeight:600, fontFamily:"'JetBrains Mono',monospace", color: active ? color : "rgba(226,232,240,.35)" }}>
+                  {typeof score === "number" ? score : "—"}
+                </span>
+                <span style={{ fontSize:11, fontFamily:"'JetBrains Mono',monospace", color: active ? "rgba(226,232,240,.55)" : "rgba(226,232,240,.28)" }}>
+                  {stat}
+                </span>
+              </div>
               <span style={{ fontSize:11, padding:"3px 8px", borderRadius:6, background: active ? `${color}18` : "rgba(255,255,255,.04)", color: active ? color : "rgba(226,232,240,.28)", fontWeight:500 }}>
                 {active ? "En ligne" : "Hors ligne"}
               </span>
@@ -970,6 +1029,102 @@ export default function App() {
   }, [userId]);
 
   useEffect(() => {
+    let mounted = true;
+    const syncAgents = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/agents/ui`);
+        if (!response.ok) return;
+        const payload = await response.json();
+        if (!mounted) return;
+        setAgents(mergeUiAgents(payload.agents));
+      } catch (error) {
+        console.warn("Impossible de synchroniser les agents UI", error);
+      }
+    };
+    syncAgents();
+    const interval = setInterval(syncAgents, 5000);
+    return () => { mounted = false; clearInterval(interval); };
+  }, []);
+
+  const applyExecutionResult = useCallback((command, success, message, requestId = null, meta = {}) => {
+    const out = typeof message === 'string' ? message : JSON.stringify(message ?? {}, null, 2);
+    const effect = meta.effect ?? null;
+    const status = effect === 'nexus_recover'
+      ? 'warn'
+      : (effect === 'nexus_recover_denied' ? 'error' : (success ? 'ok' : 'error'));
+    setExecutionLog((prev) => {
+      const pendingIndex = prev.findIndex((e) =>
+        e.status === 'pending' && (requestId != null ? String(e.id) === String(requestId) : e.cmd === command)
+      );
+      if (pendingIndex >= 0) {
+        return prev.map((e, index) => index === pendingIndex
+          ? { ...e, status, out, effect }
+          : e
+        );
+      }
+      return [{
+        id: Date.now(),
+        cmd: command,
+        status,
+        effect,
+        time: new Date().toLocaleTimeString('fr', { hour12: false }),
+        out,
+        createdAt: new Date().toISOString()
+      }, ...prev].slice(0, 50);
+    });
+  }, []);
+
+  const handleRunCommand = useCallback(async (command) => {
+    const requestId = Date.now();
+    const isNexusRecover = /^nexus\.recover\s*\(/i.test(command.trim());
+    const entry = {
+      id: requestId,
+      cmd: command,
+      status: 'pending',
+      time: new Date().toLocaleTimeString('fr', { hour12: false }),
+      out: isNexusRecover
+        ? '⛔ Nexus sous tension gravitationnelle…\n   Extraction DÉCONSEILLÉE — ne fermez pas cette fenêtre.'
+        : 'En cours…',
+      createdAt: new Date().toISOString(),
+      effect: isNexusRecover ? 'nexus_recover_pending' : null,
+    };
+    setExecutionLog((prev) => [...prev, entry]);
+
+    const controller = new AbortController();
+    const timeoutMs = isNexusRecover ? 60000 : 45000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/command`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ command, user_id: userId }),
+        signal: controller.signal,
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.detail || payload?.message || `Erreur HTTP ${response.status}`);
+      }
+      applyExecutionResult(
+        command,
+        payload.success !== false,
+        payload.message,
+        requestId,
+        { effect: payload.data?.effect }
+      );
+    } catch (error) {
+      const msg = error.name === 'AbortError'
+        ? `Délai dépassé (${timeoutMs / 1000}s). Le Nexus a peut‑être refusé l'extraction.`
+        : (error.message || 'Erreur lors de l\'exécution');
+      applyExecutionResult(command, false, msg, requestId, {
+        effect: isNexusRecover ? 'nexus_recover_denied' : null,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }, [userId, applyExecutionResult]);
+
+  useEffect(() => {
     const userKey = userId || "web-user";
     const createSocket = ({ url, onOpen, onMessage, onClose }) => {
       try {
@@ -993,20 +1148,26 @@ export default function App() {
           const payload = JSON.parse(event.data);
           console.log('Generic WS:', payload);
           if (payload?.type === 'execution_result') {
-            const entry = {
-              id: Date.now(),
-              cmd: payload.command || 'unknown',
-              status: payload.success ? 'ok' : 'error',
-              time: new Date().toLocaleTimeString('fr', { hour12: false }),
-              out: payload.message || (payload.success ? 'Résultat reçu' : 'Erreur du service'),
-              createdAt: new Date().toISOString()
-            };
-            setExecutionLog((prev) => [entry, ...prev].slice(0, 50));
+            const message = payload.message
+              ?? (payload.data ? JSON.stringify(payload.data, null, 2) : null)
+              ?? (payload.success ? 'Résultat reçu' : 'Erreur du service');
+            applyExecutionResult(
+              payload.command || 'unknown',
+              payload.success !== false,
+              message,
+              payload.request_id ?? null,
+              { effect: payload.data?.effect }
+            );
           }
           if (payload?.type === 'agent_update' && payload.agent_id) {
             setAgents((prev) => prev.map((agent) =>
               agent.id === payload.agent_id
-                ? { ...agent, active: payload.active ?? agent.active, stat: payload.stat || agent.stat }
+                ? {
+                  ...agent,
+                  active: payload.active ?? agent.active,
+                  stat: payload.stat ?? agent.stat,
+                  score: typeof payload.score === 'number' ? payload.score : agent.score,
+                }
                 : agent
             ));
           }
@@ -1046,7 +1207,7 @@ export default function App() {
     return () => {
       [genericWs, ambientWs, eyeWs].forEach(ws => { if (ws && ws.readyState === WebSocket.OPEN) ws.close(); });
     };
-  }, [userId]);
+  }, [userId, applyExecutionResult]);
 
   useEffect(() => {
     const fetchDashboardMetrics = async () => {
@@ -1112,25 +1273,32 @@ export default function App() {
     return () => { mounted = false; clearInterval(iv); };
   }, [connected]);
 
-  const handleRunCommand = (command) => {
-    const entry = {
-      id: Date.now(),
-      cmd: command,
-      status: 'pending',
-      time: new Date().toLocaleTimeString('fr', { hour12: false }),
-      out: 'En cours…',
-      createdAt: new Date().toISOString()
-    };
-    setExecutionLog((prev) => [...prev, entry]);
-    if (genericSocketRef.current && genericSocketRef.current.readyState === WebSocket.OPEN) {
-      genericSocketRef.current.send(JSON.stringify({ type: 'run_command', command }));
-    }
-  };
-
-  const handleToggleAgent = (agentId) => {
+  const handleToggleAgent = async (agentId) => {
+    const current = agents.find((agent) => agent.id === agentId);
+    if (!current) return;
+    const nextActive = !current.active;
     setAgents((prev) => prev.map((agent) =>
-      agent.id === agentId ? { ...agent, active: !agent.active } : agent
+      agent.id === agentId ? { ...agent, active: nextActive } : agent
     ));
+    try {
+      const response = await fetch(`${API_BASE}/api/agents/toggle`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agent_id: agentId, active: nextActive }),
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload?.detail || `Erreur HTTP ${response.status}`);
+      }
+      if (payload.agents) {
+        setAgents(mergeUiAgents(payload.agents));
+      }
+    } catch (error) {
+      console.warn("Échec activation agent", error);
+      setAgents((prev) => prev.map((agent) =>
+        agent.id === agentId ? { ...agent, active: !nextActive } : agent
+      ));
+    }
   };
 
   useEffect(() => {

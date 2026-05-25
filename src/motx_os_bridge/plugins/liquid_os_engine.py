@@ -26,14 +26,46 @@ class LiquidOSEngine:
         self.current_state = CognitiveState.FOCUS
         self.environment_config = {}
         self.active_transformations = []
+        self.last_snapshot: Dict = {}
     
-    async def detect_cognitive_state(self, user_activity: Dict) -> CognitiveState:
-        detected_state = await self._match_activity_to_state(user_activity)
+    async def detect_cognitive_state(self, user_activity: Dict | None = None) -> CognitiveState:
+        from .activity_detector import collect_activity_snapshot, infer_cognitive_state_id
+
+        snapshot = collect_activity_snapshot()
+        if user_activity:
+            snapshot.update({k: v for k, v in user_activity.items() if v is not None})
+
+        state_key = snapshot.get("cognitive_state_backend") or snapshot.get("cognitive_state", "focus")
+        if isinstance(state_key, str) and state_key.isupper():
+            state_key = state_key.lower()
+
+        try:
+            detected_state = CognitiveState(state_key)
+        except ValueError:
+            fg = snapshot.get("foreground_process")
+            ui_id, _ = infer_cognitive_state_id(fg)
+            mapping = {
+                "CODING": CognitiveState.CODING,
+                "CREATIVE": CognitiveState.CREATIVE,
+                "MEETING": CognitiveState.MEETING,
+                "RELAXATION": CognitiveState.RELAXATION,
+                "FOCUS": CognitiveState.FOCUS,
+            }
+            detected_state = mapping.get(ui_id, CognitiveState.FOCUS)
+
+        self.last_snapshot = snapshot
         if detected_state != self.current_state:
             logger.info(f"🧠 Cognitive state change: {self.current_state.value} → {detected_state.value}")
             await self.transform_environment(detected_state)
             self.current_state = detected_state
         return detected_state
+
+    async def get_activity_snapshot(self) -> Dict:
+        from .activity_detector import collect_activity_snapshot
+
+        snapshot = collect_activity_snapshot()
+        self.last_snapshot = snapshot
+        return snapshot
     
     async def transform_environment(self, target_state: CognitiveState) -> Dict:
         logger.info(f"🌀 Transforming environment for {target_state.value}...")
@@ -79,4 +111,4 @@ class LiquidOSEngine:
         logger.info(f"🎨 Applying visual changes: {config.get('color_scheme')}")
     
     async def _match_activity_to_state(self, activity: Dict) -> CognitiveState:
-        return CognitiveState.FOCUS
+        return await self.detect_cognitive_state(activity)
