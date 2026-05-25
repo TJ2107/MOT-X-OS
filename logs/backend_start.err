@@ -72,3 +72,55 @@ INFO:     connection closed
 INFO:     connection closed
 INFO:     connection closed
 INFO:     connection closed
+INFO:     127.0.0.1:51248 - "WebSocket /ws/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:63437 - "WebSocket /ws/ambient/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:60232 - "WebSocket /ws/eye/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:54360 - "WebSocket /ws/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:57727 - "WebSocket /ws/ambient/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:59739 - "WebSocket /ws/eye/web-user-1779272750908" [accepted]
+INFO:     connection open
+WebSocket error: (1001, '')
+INFO:     connection closed
+WebSocket error: (1001, '')
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     127.0.0.1:57894 - "WebSocket /ws/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:62286 - "WebSocket /ws/ambient/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:59492 - "WebSocket /ws/eye/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:53078 - "WebSocket /ws/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:54335 - "WebSocket /ws/ambient/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:59176 - "WebSocket /ws/eye/web-user-1779272750908" [accepted]
+INFO:     connection open
+WebSocket error: (1001, '')
+WebSocket error: (1001, '')
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     connection closed
+INFO:     127.0.0.1:49329 - "WebSocket /ws/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:60070 - "WebSocket /ws/ambient/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:59564 - "WebSocket /ws/eye/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:53830 - "WebSocket /ws/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:54552 - "WebSocket /ws/ambient/web-user-1779272750908" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:60334 - "WebSocket /ws/eye/web-user-1779272750908" [accepted]
+INFO:     connection open
