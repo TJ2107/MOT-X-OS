@@ -11,6 +11,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 
@@ -63,6 +64,24 @@ app.add_middleware(
 )
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+
+# Try to mount the frontend production build (Vite `dist`) if available.
+# Common locations checked (local repo during development, or copied
+# into the image at /app/static during Docker build).
+dist_paths = [
+    Path(__file__).resolve().parents[2] / "motx-frontend" / "dist",
+    Path.cwd() / "static",
+    Path(__file__).resolve().parent / "static",
+]
+for p in dist_paths:
+    try:
+        if p.exists():
+            app.mount("/", StaticFiles(directory=str(p), html=True), name="frontend")
+            logger.info(f"Mounting frontend static files from {p}")
+            break
+    except Exception:
+        # ignore filesystem issues during import; continue to next candidate
+        continue
 
 engine: Optional[MOTXAutomationEngine] = None
 multi_agent: Optional[MultiAgentSystem] = None

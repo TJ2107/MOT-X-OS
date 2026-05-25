@@ -1,11 +1,22 @@
+# Stage 1: Build frontend with Node
+FROM node:18 AS frontend-build
+WORKDIR /app/frontend
+COPY motx-frontend/package.json motx-frontend/package-lock.json* ./
+RUN npm ci --no-audit --progress=false || npm install --no-audit --no-fund
+COPY motx-frontend/ ./
+RUN npm run build
+
+# Stage 2: Python backend
 FROM python:3.13-slim
-
 WORKDIR /app
-
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy Python source
 COPY src /app/src
+
+# Copy built frontend into the image so the backend can serve it
+COPY --from=frontend-build /app/frontend/dist /app/static
 
 EXPOSE 8000
 

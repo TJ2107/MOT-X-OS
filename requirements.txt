@@ -15,7 +15,7 @@ beautifulsoup4
 Pillow
 pytesseract
 opencv-python
-mediapipe<0.10
+mediapipe>=0.10
 pyautogui
 
 # Voice Interface dependencies

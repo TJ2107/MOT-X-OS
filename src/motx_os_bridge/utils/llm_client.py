@@ -32,7 +32,7 @@ class LocalLLMClient:
     def _detect_backend(self):
         # Prefer explicit backend if provided
         if self.backend == "ollama_api":
-            model_name = self.model_path or "llama2"
+            model_name = self.model_path or self._resolve_ollama_model("llama2")
             try:
                 ollama_client = OllamaClient(
                     host=self.ollama_host,
@@ -65,7 +65,7 @@ class LocalLLMClient:
 
         # Ollama API detection (preferred when running local Ollama daemon)
         try:
-            model_name = self.model_path or "llama2"
+            model_name = self.model_path or self._resolve_ollama_model("llama2")
             ollama_client = OllamaClient(
                 host=self.ollama_host,
                 port=self.ollama_port,
@@ -105,6 +105,7 @@ class LocalLLMClient:
         self._client = ("stub", None)
 
     def _find_default_ollama_model(self) -> str:
+        """Find first available Ollama model via CLI"""
         try:
             result = subprocess.run(["ollama", "list"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
             if result.returncode == 0:
@@ -120,6 +121,30 @@ class LocalLLMClient:
         except Exception:
             pass
         return ""
+
+    def _resolve_ollama_model(self, alias: str) -> str:
+        """Resolve generic model alias to actual available Ollama model"""
+        try:
+            result = subprocess.run(["ollama", "list"], capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=10)
+            if result.returncode == 0:
+                models = []
+                for line in result.stdout.splitlines():
+                    text = line.strip()
+                    if not text or text.startswith("NAME") or text.startswith("ID") or text.startswith("SIZE") or text.startswith("MODIFIED"):
+                        continue
+                    parts = text.split()
+                    if parts:
+                        models.append(parts[0])
+                
+                if models:
+                    # Use _choose_model_alias to pick best match
+                    best = self._choose_model_alias(alias, models)
+                    if best:
+                        return best
+                    return models[0]  # Fallback to first model
+        except Exception:
+            pass
+        return alias  # Return original alias if resolution fails
 
     def _choose_model_alias(self, alias: str, available_models: list[str]) -> str | None:
         """Return the best matching available model for a generic alias."""
