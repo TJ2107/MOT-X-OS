@@ -1,4 +1,5 @@
 import { Zap, CheckCircle, Clock, Bot, Play, BarChart2, Mic, Layers } from "lucide-react";
+import WorkflowTimeline from "../components/WorkflowTimeline";
 
 const SLabel = ({ children }) => (
   <div style={{ fontSize: 10, color: "rgba(226,232,240,.28)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 16 }}>
@@ -6,8 +7,12 @@ const SLabel = ({ children }) => (
   </div>
 );
 
-function Dashboard({ ambientUpdate, eyeGaze, run, executionLog, services, dashboardMetrics }) {
+function Dashboard({ ambientUpdate, eyeGaze, run, executionLog, services, dashboardMetrics, agents }) {
   const recentExecutions = executionLog.slice(0, 5);
+  
+  // Récupérer les workflows du Shadow Mode agent
+  const shadowAgent = agents?.find((a) => a.id === "shadow");
+  const workflows = dashboardMetrics?.discoveredWorkflows || [];
   
   const stats = [
     {
@@ -98,6 +103,11 @@ function Dashboard({ ambientUpdate, eyeGaze, run, executionLog, services, dashbo
             ))}
           </div>
         </div>
+      </div>
+
+      <div className="glass" style={{ padding: 24 }}>
+        <SLabel>Workflows Découverts</SLabel>
+        <WorkflowTimeline workflows={workflows} />
       </div>
 
       <div className="glass" style={{ padding: 24 }}>

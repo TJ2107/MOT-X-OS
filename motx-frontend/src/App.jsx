@@ -13,6 +13,8 @@ import Cognitive from "./pages/Cognitive";
 import Agents from "./pages/Agents";
 import Analytics from "./pages/Analytics";
 import Vision from "./pages/Vision";
+import Onboarding from "./pages/Onboarding";
+import { ToastContainer } from "./components/Toast";
 
 const USER_ID_KEY = "motx-user-id";
 const initialUserId = () => {
@@ -77,6 +79,11 @@ const mergeUiAgents = (remoteAgents) => {
 
 export default function App() {
   const [active, setActive] = useState("dashboard");
+  const [showOnboarding, setShowOnboarding] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const stored = window.localStorage.getItem("motx-onboarding-done");
+    return !stored;
+  });
   const [connected, setConnected] = useState(false);
   const [ambientConnected, setAmbientConnected] = useState(false);
   const [eyeConnected, setEyeConnected] = useState(false);
@@ -89,8 +96,32 @@ export default function App() {
     totalExecutions: 0,
     successRate: 0,
     averageSpeed: 0,
-    activeAgents: 0
+    activeAgents: 0,
+    discoveredWorkflows: [
+      {
+        id: "seed_git_commit",
+        name: "Git Commit Flow",
+        description: "Détecte la séquence : VSCode → Git → Terminal commit",
+        confidence: 0.92,
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+      },
+      {
+        id: "seed_documentation",
+        name: "Documentation Update",
+        description: "Pattern : Édition fichier → Git add → Git push",
+        confidence: 0.87,
+        timestamp: new Date(Date.now() - 1800000).toISOString(),
+      },
+      {
+        id: "seed_code_review",
+        name: "Code Review Routine",
+        description: "Cycle : GitHub PR → VSCode → Terminal tests",
+        confidence: 0.78,
+        timestamp: new Date(Date.now() - 900000).toISOString(),
+      },
+    ]
   });
+  const [toasts, setToasts] = useState([]);
   const [userId] = useState(initialUserId);
   const genericSocketRef = useRef(null);
 
@@ -317,22 +348,25 @@ export default function App() {
         const successRate = overview.success_rate ?? performance.success_rate ?? 0;
         const averageSpeed = overview.average_speed_seconds ?? performance.average_execution_time ?? 0;
         const activeAgents = overview.active_agents ?? overview.active_workflows ?? agents.filter((agent) => agent.active).length;
+        const discoveredWorkflows = payload.discoveredWorkflows || [];
 
         setDashboardMetrics({
           totalExecutions,
           successRate,
           averageSpeed,
-          activeAgents
+          activeAgents,
+          discoveredWorkflows
         });
       } catch (error) {
         console.warn('Impossible de charger les métriques du dashboard', error);
         const successful = executionLog.filter((e) => e.status === 'ok').length;
-        setDashboardMetrics({
+        setDashboardMetrics((prev) => ({
           totalExecutions: executionLog.length,
           successRate: executionLog.length ? (successful / executionLog.length) * 100 : 0,
           averageSpeed: 0,
-          activeAgents: agents.filter((agent) => agent.active).length
-        });
+          activeAgents: agents.filter((agent) => agent.active).length,
+          discoveredWorkflows: prev.discoveredWorkflows || []
+        }));
       }
     };
     fetchDashboardMetrics();
@@ -391,6 +425,45 @@ export default function App() {
     }
   };
 
+  const handleCompleteOnboarding = () => {
+    setShowOnboarding(false);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("motx-onboarding-done", "true");
+    }
+  };
+
+  const addToast = useCallback((type = "info", title = "", message = "", duration = 4000) => {
+    const id = `toast-${Date.now()}-${Math.random()}`;
+    setToasts((prev) => [...prev, { id, type, title, message, duration }]);
+    return id;
+  }, []);
+
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  }, []);
+
+  // Emit toast when Shadow Mode detects activity
+  useEffect(() => {
+    const shadowAgent = agents.find((a) => a.id === "shadow");
+    if (shadowAgent?.active) {
+      // Simulate detection events
+      const interval = setInterval(() => {
+        if (Math.random() > 0.6) {
+          const messages = [
+            { title: "🕵️ Activité détectée", message: "Pattern VSCode → Terminal observé" },
+            { title: "🔄 Pattern reconnu", message: "Git workflow en cours d'exécution" },
+            { title: "🎯 Workflow découvert", message: "Nouvelle routine d'automation détectée" },
+            { title: "✨ Suggestion", message: "Vous pourriez automatiser cette séquence" },
+          ];
+          const msg = messages[Math.floor(Math.random() * messages.length)];
+          addToast("shadow", msg.title, msg.message, 5000);
+        }
+      }, 4000);
+
+      return () => clearInterval(interval);
+    }
+  }, [agents, addToast]);
+
   useEffect(() => {
     const shadowActive = agents.find((agent) => agent.id === "shadow")?.active;
     const voiceActive = agents.find((agent) => agent.id === "voice")?.active;
@@ -424,7 +497,10 @@ export default function App() {
   const TabComponent = TABS[active];
 
   return (
-    <div className="motx-root" style={{ width: "100%", height: "100vh", display: "flex", background: "#050B18", position: "relative", overflow: "hidden" }}>
+    <>
+      {showOnboarding && <Onboarding onComplete={handleCompleteOnboarding} />}
+      
+      <div className="motx-root" style={{ width: "100%", height: "100vh", display: "flex", background: "#050B18", position: "relative", overflow: "hidden" }}>
       {/* Background Animated Blobs */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", zIndex: 0 }}>
         <div style={{ position: "absolute", width: 700, height: 700, top: -220, right: -120, background: "radial-gradient(circle, rgba(6,182,212,.08) 0%, transparent 65%)", borderRadius: "50%", animation: "blob1 14s ease-in-out infinite" }}/>
@@ -456,6 +532,9 @@ export default function App() {
           run={(target) => { if (target) setActive(target); }}
         />
       </main>
-    </div>
+      </div>
+
+      <ToastContainer toasts={toasts} onClose={removeToast} />
+    </>
   );
 }

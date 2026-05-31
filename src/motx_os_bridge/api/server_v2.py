@@ -725,11 +725,28 @@ async def toggle_ui_agent_route(request: AgentToggleRequest):
 
 @app.get("/api/analytics/dashboard")
 async def get_analytics_dashboard():
+    shadow = get_shadow_mode()
+    
+    # Récupérer les workflows découverts
+    discovered_workflows = []
+    if shadow and hasattr(shadow, 'workflow_candidates'):
+        discovered_workflows = [
+            {
+                "id": wf.get("id", f"workflow_{i}"),
+                "name": wf.get("name", f"Workflow {i+1}"),
+                "description": wf.get("description", ""),
+                "confidence": wf.get("confidence", 0.0),
+                "timestamp": wf.get("timestamp", datetime.now().isoformat()),
+            }
+            for i, wf in enumerate(shadow.workflow_candidates)
+        ]
+    
     return {
         "overview": analytics.get_overview() if analytics else {},
         "performance": analytics.get_performance_metrics() if analytics else {},
         "trends": analytics.get_trends() if analytics else {},
         "predictions": analytics.get_predictions() if analytics else {},
+        "discoveredWorkflows": discovered_workflows,
         "timestamp": datetime.now().isoformat()
     }
 
