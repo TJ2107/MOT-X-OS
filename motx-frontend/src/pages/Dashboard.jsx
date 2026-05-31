@@ -1,68 +1,127 @@
-import { useEffect, useState } from 'react';
-import { API_BASE } from '../lib/apiConfig';
-import useStore from '../store/appStore';
-import StatCard from '../components/StatCard';
-import RecentExecutions from '../components/RecentExecutions';
-import SystemStatus from '../components/SystemStatus';
-import QuickActions from '../components/QuickActions';
+import { Zap, CheckCircle, Clock, Bot, Play, BarChart2, Mic, Layers } from "lucide-react";
 
-function Dashboard() {
-  const { executionHistory, analyticsData } = useStore();
-  const [stats, setStats] = useState({
-    totalExecutions: 0,
-    successRate: 0,
-    averageSpeed: 0,
-    activeAgents: 0
-  });
+const SLabel = ({ children }) => (
+  <div style={{ fontSize: 10, color: "rgba(226,232,240,.28)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 16 }}>
+    {children}
+  </div>
+);
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch(`${API_BASE}/api/analytics/dashboard`);
-        const data = await response.json();
-        const analytics = data.analytics || {};
-        const successful = executionHistory.filter((e) => e.data?.status === 'success').length;
-        setStats({
-          totalExecutions: analytics.total_executions ?? executionHistory.length,
-          successRate: analytics.success_rate ?? (executionHistory.length > 0 ? ((successful / executionHistory.length) * 100).toFixed(1) : 0),
-          averageSpeed: analytics.average_speed_seconds ?? 0,
-          activeAgents: analytics.active_agents ?? analytics.active_workflows ?? 0
-        });
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-        // fallback to local data
-        const successful = executionHistory.filter((e) => e.data?.status === 'success').length;
-        setStats({
-          totalExecutions: executionHistory.length,
-          successRate: executionHistory.length > 0 ? ((successful / executionHistory.length) * 100).toFixed(1) : 0,
-          averageSpeed: 0,
-          activeAgents: 0
-        });
-      }
-    };
-
-    fetchStats();
-  }, [executionHistory, analyticsData]);
+function Dashboard({ ambientUpdate, eyeGaze, run, executionLog, services, dashboardMetrics }) {
+  const recentExecutions = executionLog.slice(0, 5);
+  
+  const stats = [
+    {
+      label: "Exécutions",
+      sub: "Total",
+      value: dashboardMetrics.totalExecutions ?? executionLog.length,
+      Icon: Zap,
+      color: "#F59E0B",
+      glow: "rgba(245,158,11,.14)",
+      delay: "0.08s"
+    },
+    {
+      label: "Taux Succès",
+      sub: "Réussite",
+      value: `${dashboardMetrics.successRate?.toFixed(1) ?? 0}%`,
+      Icon: CheckCircle,
+      color: "#10B981",
+      glow: "rgba(16,185,129,.13)",
+      delay: "0.16s"
+    },
+    {
+      label: "Latence moy.",
+      sub: "Vitesse",
+      value: `${dashboardMetrics.averageSpeed?.toFixed(2) ?? 0}s`,
+      Icon: Clock,
+      color: "#60A5FA",
+      glow: "rgba(96,165,250,.13)",
+      delay: "0.24s"
+    },
+    {
+      label: "Agents Actifs",
+      sub: "En ligne",
+      value: dashboardMetrics.activeAgents ?? services.filter((s) => s.status === "En ligne" || s.status === "Actif").length,
+      Icon: Bot,
+      color: "#A78BFA",
+      glow: "rgba(167,139,250,.13)",
+      delay: "0.32s"
+    }
+  ];
 
   return (
-    <div className="dashboard-container">
-      <h1>📊 Dashboard</h1>
-
-      <div className="stats-grid">
-        <StatCard icon="⚡" label="Total Exécutions" value={stats.totalExecutions} />
-        <StatCard icon="✅" label="Taux de Succès" value={`${stats.successRate}%`} />
-        <StatCard icon="⏱️" label="Vitesse Moyenne" value={`${stats.averageSpeed.toFixed(2)}s`} />
-        <StatCard icon="🤖" label="Agents Actifs" value={stats.activeAgents} />
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ animation: "fadeUp .35s ease both" }}>
+        <div style={{ fontSize: 10, color: "rgba(226,232,240,.28)", letterSpacing: "0.16em", textTransform: "uppercase", marginBottom: 8 }}>Vue d'ensemble</div>
+        <h1 style={{ fontSize: 28, fontWeight: 600, color: "#E2E8F0", letterSpacing: "-0.02em" }}>Dashboard</h1>
       </div>
 
-      <div className="dashboard-content">
-        <div className="left-panel">
-          <QuickActions />
-          <SystemStatus />
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
+        {stats.map(({ label, sub, value, Icon, color, glow, delay }) => (
+          <div key={label} className="stat-card" style={{ animationDelay: delay }}>
+            <div style={{ display: "flex", alignItems: "center", justifycontent: "space-between", justifyContent: "space-between", marginBottom: 16 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: glow, border: `1px solid ${color}28`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon size={14} color={color} strokeWidth={1.5} />
+              </div>
+              <span style={{ fontSize: 10, color: "rgba(226,232,240,.28)", letterSpacing: "0.12em", textTransform: "uppercase" }}>{sub}</span>
+            </div>
+            <div style={{ fontSize: 28, fontWeight: 600, color: "#E2E8F0", letterSpacing: "-0.02em", marginBottom: 4, fontFamily: "'JetBrains Mono',monospace" }}>{value}</div>
+            <div style={{ fontSize: 13, color: "rgba(226,232,240,.38)" }}>{label}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 12 }}>
+        <div className="glass" style={{ padding: 24 }}>
+          <SLabel>Actions rapides</SLabel>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {[
+              { label: "Lancer exécution", Icon: Play, cls: "primary", action: "execution" },
+              { label: "Analytiques", Icon: BarChart2, action: "analytiques" },
+              { label: "Vérifier agents", Icon: Bot, action: "agents" },
+              { label: "Commande vocale", Icon: Mic, action: "cognitif" },
+            ].map(({ label, Icon, cls = "", action }) => (
+              <button key={label} className={`btn ${cls}`} data-action={action} onClick={() => run && run(action)}>
+                <Icon size={12} strokeWidth={1.5} />{label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div className="right-panel">
-          <RecentExecutions executions={executionHistory.slice(0, 5)} />
+
+        <div className="glass" style={{ padding: 24 }}>
+          <SLabel>État du système</SLabel>
+          <div style={{ display: "grid", gap: 10 }}>
+            {services.map((service) => (
+              <div key={service.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.02)", border: `1px solid rgba(255,255,255,.06)` }}>
+                <span style={{ fontSize: 12, color: "rgba(226,232,240,.7)" }}>{service.label}</span>
+                <span style={{ fontSize: 12, color: service.color, fontWeight: 600 }}>{service.status}</span>
+              </div>
+            ))}
+          </div>
         </div>
+      </div>
+
+      <div className="glass" style={{ padding: 24 }}>
+        <SLabel>Exécutions récentes</SLabel>
+        {recentExecutions.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {recentExecutions.map((entry) => (
+              <div key={entry.id} style={{ padding: "12px 14px", borderRadius: 14, background: "rgba(255,255,255,.02)", border: "1px solid rgba(255,255,255,.06)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 12, color: "rgba(226,232,240,.6)" }}>{entry.time}</span>
+                  <span style={{ fontSize: 12, color: entry.status === "ok" ? "#10B981" : entry.status === "pending" ? "#F59E0B" : "#EF4444" }}>
+                    {entry.status === "ok" ? "Succès" : entry.status === "pending" ? "En attente" : "Erreur"}
+                  </span>
+                </div>
+                <div style={{ marginTop: 8, color: "rgba(226,232,240,.85)", fontSize: 13, fontFamily: "'JetBrains Mono',monospace" }}>{entry.cmd}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 92, gap: 8 }}>
+            <Layers size={20} color="rgba(226,232,240,.12)" strokeWidth={1.2} />
+            <span style={{ fontSize: 12, color: "rgba(226,232,240,.22)" }}>Aucune exécution enregistrée</span>
+          </div>
+        )}
       </div>
     </div>
   );

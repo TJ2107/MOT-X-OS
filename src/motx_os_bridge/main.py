@@ -7,7 +7,7 @@ from motx_os_bridge.utils.config_loader import load_settings
 
 def start_fastapi_server(host, port):
     import uvicorn
-    from motx_os_bridge.api.fastapi_server import app
+    from motx_os_bridge.api.server_v2 import app
     config = uvicorn.Config(app, host=host, port=port, log_level="warning")
     server = uvicorn.Server(config)
 

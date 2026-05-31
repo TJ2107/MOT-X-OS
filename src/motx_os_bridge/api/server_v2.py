@@ -158,7 +158,7 @@ def _format_command_message(payload: Any) -> str:
         return str(payload)
 
 
-COMMAND_TIMEOUT_SEC = 45
+COMMAND_TIMEOUT_SEC = 120
 NEXUS_RECOVER_DELAY_SEC = 3.2
 
 
@@ -341,6 +341,7 @@ async def startup_event():
         from .ui_agents import ensure_black_hole_watch
         asyncio.create_task(ensure_black_hole_watch())
         asyncio.create_task(_ui_agents_broadcaster_loop())
+        asyncio.create_task(_history_purge_loop())
     except Exception as e:
         logger.error(f"❌ Erreur startup: {str(e)}")
         raise
@@ -412,6 +413,25 @@ async def _ui_agents_broadcaster_loop() -> None:
         except Exception as exc:
             logger.debug("UI agents broadcaster: %s", exc)
         await asyncio.sleep(5)
+
+
+async def _history_purge_loop() -> None:
+    """Purge automatiquement les commandes exécutées de plus de 7 jours.
+    Tourne en arrière-plan, vérifie toutes les 24h."""
+    PURGE_INTERVAL_SEC = 24 * 3600  # vérification quotidienne
+    MAX_AGE_DAYS = 7
+    logger.info("🗑️  Purge automatique de l'historique activée (rétention : %d jours)", MAX_AGE_DAYS)
+    while True:
+        await asyncio.sleep(PURGE_INTERVAL_SEC)
+        try:
+            if engine and hasattr(engine, "memory"):
+                removed = engine.memory.purge_old_entries(max_age_days=MAX_AGE_DAYS)
+                if removed:
+                    logger.info("🗑️  Purge historique : %d entrée(s) supprimée(s) (> %d jours)", removed, MAX_AGE_DAYS)
+                else:
+                    logger.debug("🗑️  Purge historique : rien à supprimer.")
+        except Exception as exc:
+            logger.warning("Erreur lors de la purge de l'historique : %s", exc)
 
 
 async def broadcast_update(message: Dict[str, Any]):

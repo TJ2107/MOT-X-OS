@@ -16,7 +16,12 @@ class TaskPlanner:
             if llm_tasks:
                 return llm_tasks
 
-        return self._build_plan_with_rules(instruction)
+        rules_tasks = self._build_plan_with_rules(instruction)
+        if rules_tasks:
+            return rules_tasks
+            
+        prompt = f"Tu es l'intelligence artificielle intégrée à MOT-X OS. Réponds de façon concise et utile à l'instruction suivante de l'utilisateur : {instruction}"
+        return [{"type": "LLM_GENERATE", "prompt": prompt, "max_tokens": 512}]
 
     def _build_plan_with_llm(self, instruction: str) -> list[dict]:
         prompt = self._get_planning_prompt(instruction)

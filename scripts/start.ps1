@@ -174,13 +174,17 @@ Write-Host "   Backend socket ouvert sur http://127.0.0.1:$backendPort" -Foregro
 $backendStatusMonitorOut = Join-Path $projectRoot "logs\backend_status_check.out"
 $backendStatusMonitorErr = Join-Path $projectRoot "logs\backend_status_check.err"
 $backendStatusMonitorScript = Join-Path $projectRoot "scripts\check_api_status.ps1"
-Get-Content -Path "logs\frontend_start.log" -Wait -Tail 50 = Start-Process -FilePath "powershell.exe" `
+# Lancer le moniteur d'API en arrière-plan et rediriger ses logs
+$monitorProc = Start-Process -FilePath "powershell.exe" `
     -ArgumentList "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "$backendStatusMonitorScript", "-Url", "http://127.0.0.1:$backendPort/api/status", "-TimeoutSec", "120" `
     -WorkingDirectory $projectRoot `
     -RedirectStandardOutput $backendStatusMonitorOut `
     -RedirectStandardError $backendStatusMonitorErr `
     -PassThru -WindowStyle Hidden
 Write-Host "   Vérification de /api/status en arrière-plan (logs: $backendStatusMonitorOut, $backendStatusMonitorErr)" -ForegroundColor Yellow
+
+# Tailing du log frontend en tâche distante pour ne pas bloquer le script principal
+Start-Job -ScriptBlock { param($p) Get-Content -Path $p -Wait -Tail 50 } -ArgumentList (Join-Path $projectRoot "logs\frontend_start.log") | Out-Null
 
 # 2. Demarrer le Frontend (React)
 Write-Host "[2/2] Demarrage du Frontend..." -ForegroundColor Yellow
