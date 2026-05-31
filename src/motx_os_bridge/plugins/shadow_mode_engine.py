@@ -182,6 +182,19 @@ class ShadowModeEngine:
             logger.debug(f"Error getting active application: {str(e)}")
         return "Unknown Application"
 
+    async def _resolve_ollama_vision_model(self) -> str:
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get("http://localhost:11434/api/tags", timeout=5.0)
+                if response.status_code == 200:
+                    models = [m.get("name", "") for m in response.json().get("models", [])]
+                    llava_models = [m for m in models if m.lower().startswith("llava")]
+                    if llava_models:
+                        return llava_models[0]
+        except Exception as e:
+            logger.debug(f"Unable to resolve Ollama vision model: {e}")
+        return "llava:latest"
+
     async def _analyze_with_ollama_vision(self, img_array: np.ndarray, app_name: str) -> str:
         try:
             # Convertir numpy RGB/RGBA en image PIL
@@ -193,9 +206,10 @@ class ShadowModeEngine:
             pil_img.save(buffered, format="JPEG", quality=80)
             b64_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
             
+            model_name = await self._resolve_ollama_vision_model()
             async with httpx.AsyncClient() as client:
                 payload = {
-                    "model": "llava",
+                    "model": model_name,
                     "prompt": f"Describe the active user context in this screenshot of the '{app_name}' application. What are they working on?",
                     "images": [b64_image],
                     "stream": False
@@ -204,8 +218,10 @@ class ShadowModeEngine:
                 if response.status_code == 200:
                     desc = response.json().get("response", "").strip()
                     if desc:
-                        logger.info(f"🧠 Ollama LLaVA Vision analysis: {desc}")
+                        logger.info(f"🧠 Ollama LLaVA Vision analysis ({model_name}): {desc}")
                         return desc
+                else:
+                    logger.warning(f"Ollama LLaVA vision analysis failed ({model_name}) HTTP {response.status_code}: {response.text}")
         except Exception as e:
             logger.warning(f"Ollama LLaVA vision analysis failed or model not available: {str(e)}")
         

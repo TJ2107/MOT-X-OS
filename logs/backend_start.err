@@ -1,25 +1,23 @@
-INFO:     Started server process [25084]
+INFO:     Started server process [28044]
 INFO:     Waiting for application startup.
 ⚠️ MediaPipe 0.10+ detected. Using Tasks API fallback.
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 5768.56it/s]
-Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 11996.37it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 3092.83it/s]
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|██████████| 103/103 [00:00<00:00, 2223.14it/s]
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
-INFO:     127.0.0.1:50097 - "WebSocket /ws/web-user-1779821719460" [accepted]
+INFO:     127.0.0.1:54850 - "WebSocket /ws/web-user-1780244872977" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:50203 - "WebSocket /ws/ambient/web-user-1779821719460" [accepted]
+INFO:     127.0.0.1:62770 - "WebSocket /ws/ambient/web-user-1780244872977" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:56006 - "WebSocket /ws/eye/web-user-1779821719460" [accepted]
+INFO:     127.0.0.1:53983 - "WebSocket /ws/eye/web-user-1780244872977" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:55229 - "WebSocket /ws/web-user-1779821719460" [accepted]
+INFO:     127.0.0.1:61048 - "WebSocket /ws/web-user-1780244872977" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:60974 - "WebSocket /ws/ambient/web-user-1779821719460" [accepted]
+INFO:     127.0.0.1:56931 - "WebSocket /ws/ambient/web-user-1780244872977" [accepted]
 INFO:     connection open
-INFO:     127.0.0.1:59133 - "WebSocket /ws/eye/web-user-1779821719460" [accepted]
+INFO:     127.0.0.1:52031 - "WebSocket /ws/eye/web-user-1780244872977" [accepted]
 INFO:     connection open
-Ollama LLaVA vision analysis failed or model not available: 
-WebSocket error: (<CloseCode.ABNORMAL_CLOSURE: 1006>, '')
 Erreur broadcast: 
 Erreur broadcast: 
 INFO:     connection closed
@@ -27,87 +25,7 @@ INFO:     connection closed
 INFO:     connection closed
 INFO:     connection closed
 INFO:     connection closed
+INFO:     connection closed
 WebSocket error: (<CloseCode.ABNORMAL_CLOSURE: 1006>, '')
-INFO:     connection closed
-Ollama LLaVA vision analysis failed or model not available: 
-Ollama LLaVA vision analysis failed or model not available: 
-INFO:     127.0.0.1:53079 - "WebSocket /ws/web-user-1779272750908" [accepted]
-INFO:     connection open
-INFO:     127.0.0.1:52158 - "WebSocket /ws/web-user-1779822656220" [accepted]
-INFO:     connection closed
-ERROR:    Exception in ASGI application
-Traceback (most recent call last):
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 317, in asgi_send
-    await self.send(data)  # type: ignore[arg-type]
-    ^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 618, in send
-    await self.ensure_open()
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\websockets\legacy\protocol.py", line 916, in ensure_open
-    raise self.connection_closed_exc()
-websockets.exceptions.ConnectionClosedError: no close frame received or sent
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\websockets.py", line 86, in send
-    await self._send(message)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\_exception_handler.py", line 39, in sender
-    await send(message)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 330, in asgi_send
-    raise ClientDisconnected from exc
-uvicorn.protocols.utils.ClientDisconnected
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\uvicorn\protocols\websockets\websockets_impl.py", line 239, in run_asgi
-    result = await self.app(self.scope, self.asgi_receive, self.asgi_send)  # type: ignore[func-returns-value]
-             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 56, in __call__
-    return await self.app(scope, receive, send)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\fastapi\applications.py", line 1159, in __call__
-    await super().__call__(scope, receive, send)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\applications.py", line 90, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\middleware\errors.py", line 151, in __call__
-    await self.app(scope, receive, send)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\middleware\gzip.py", line 19, in __call__
-    await self.app(scope, receive, send)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\middleware\cors.py", line 80, in __call__
-    await self.app(scope, receive, send)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
-    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
-    raise exc
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
-    await self.app(scope, receive, send)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\routing.py", line 660, in __call__
-    await self.middleware_stack(scope, receive, send)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\routing.py", line 680, in app
-    await route.handle(scope, receive, send)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\routing.py", line 350, in handle
-    await self.app(scope, receive, send)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\fastapi\routing.py", line 160, in app
-    await wrap_app_handling_exceptions(app, session)(scope, receive, send)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
-    raise exc
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
-    await app(scope, receive, sender)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\fastapi\routing.py", line 157, in app
-    await func(session)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\fastapi\routing.py", line 764, in app
-    await dependant.call(**solved_result.values)
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\src\motx_os_bridge\api\server_v2.py", line 775, in websocket_endpoint
-    await websocket.send_json({
-    ...<3 lines>...
-    })
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\websockets.py", line 176, in send_json
-    await self.send({"type": "websocket.send", "text": text})
-  File "C:\Users\DELL\OneDrive - STHIC\Documents\MOT-X OS\.venv\Lib\site-packages\starlette\websockets.py", line 89, in send
-    raise WebSocketDisconnect(code=1006)
-starlette.websockets.WebSocketDisconnect
-Erreur broadcast: Cannot call "send" once a close message has been sent.
+WebSocket error: (<CloseCode.ABNORMAL_CLOSURE: 1006>, '')
 Ollama LLaVA vision analysis failed or model not available: 
