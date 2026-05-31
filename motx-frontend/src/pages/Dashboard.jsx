@@ -7,7 +7,7 @@ const SLabel = ({ children }) => (
   </div>
 );
 
-function Dashboard({ ambientUpdate, eyeGaze, run, executionLog, services, dashboardMetrics, agents }) {
+function Dashboard({ ambientUpdate, eyeGaze, run, executionLog, services, dashboardMetrics, agents, onAcceptWorkflow, onRejectWorkflow }) {
   const recentExecutions = executionLog.slice(0, 5);
   
   // Récupérer les workflows du Shadow Mode agent
@@ -107,7 +107,40 @@ function Dashboard({ ambientUpdate, eyeGaze, run, executionLog, services, dashbo
 
       <div className="glass" style={{ padding: 24 }}>
         <SLabel>Workflows Découverts</SLabel>
-        <WorkflowTimeline workflows={workflows} />
+        <WorkflowTimeline workflows={workflows} onAccept={onAcceptWorkflow} onReject={onRejectWorkflow} />
+      </div>
+
+      <div className="glass" style={{ padding: 24 }}>
+        <SLabel>Acceptés / Rejetés</SLabel>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 12, color: 'rgba(226,232,240,.6)', marginBottom: 8 }}>Acceptés</div>
+            {(dashboardMetrics.acceptedWorkflows || []).length === 0 ? (
+              <div style={{ fontSize: 12, color: 'rgba(226,232,240,.22)' }}>Aucun</div>
+            ) : (
+              (dashboardMetrics.acceptedWorkflows || []).map((w) => (
+                <div key={w.id} style={{ padding: 8, borderRadius: 8, background: 'rgba(16,185,129,0.06)', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0' }}>{w.name}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(226,232,240,.5)' }}>{w.description}</div>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div>
+            <div style={{ fontSize: 12, color: 'rgba(226,232,240,.6)', marginBottom: 8 }}>Rejetés</div>
+            {(dashboardMetrics.rejectedWorkflows || []).length === 0 ? (
+              <div style={{ fontSize: 12, color: 'rgba(226,232,240,.22)' }}>Aucun</div>
+            ) : (
+              (dashboardMetrics.rejectedWorkflows || []).map((w) => (
+                <div key={w.id} style={{ padding: 8, borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', marginBottom: 8 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#E2E8F0' }}>{w.name}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(226,232,240,.5)' }}>{w.description}</div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="glass" style={{ padding: 24 }}>

@@ -726,27 +726,35 @@ async def toggle_ui_agent_route(request: AgentToggleRequest):
 @app.get("/api/analytics/dashboard")
 async def get_analytics_dashboard():
     shadow = get_shadow_mode()
-    
-    # Récupérer les workflows découverts
+
+    # Récupérer les workflows découverts + acceptés/rejetés
     discovered_workflows = []
-    if shadow and hasattr(shadow, 'workflow_candidates'):
-        discovered_workflows = [
-            {
-                "id": wf.get("id", f"workflow_{i}"),
-                "name": wf.get("name", f"Workflow {i+1}"),
-                "description": wf.get("description", ""),
-                "confidence": wf.get("confidence", 0.0),
-                "timestamp": wf.get("timestamp", datetime.now().isoformat()),
-            }
-            for i, wf in enumerate(shadow.workflow_candidates)
-        ]
-    
+    accepted = []
+    rejected = []
+    if shadow:
+        if hasattr(shadow, 'workflow_candidates'):
+            discovered_workflows = [
+                {
+                    "id": wf.get("id", f"workflow_{i}"),
+                    "name": wf.get("name", f"Workflow {i+1}"),
+                    "description": wf.get("description", ""),
+                    "confidence": wf.get("confidence", 0.0),
+                    "timestamp": wf.get("timestamp", datetime.now().isoformat()),
+                }
+                for i, wf in enumerate(shadow.workflow_candidates)
+            ]
+        # optional storage on the shadow engine
+        accepted = getattr(shadow, 'accepted_workflows', [])
+        rejected = getattr(shadow, 'rejected_workflows', [])
+
     return {
         "overview": analytics.get_overview() if analytics else {},
         "performance": analytics.get_performance_metrics() if analytics else {},
         "trends": analytics.get_trends() if analytics else {},
         "predictions": analytics.get_predictions() if analytics else {},
         "discoveredWorkflows": discovered_workflows,
+        "acceptedWorkflows": accepted,
+        "rejectedWorkflows": rejected,
         "timestamp": datetime.now().isoformat()
     }
 
@@ -776,6 +784,58 @@ async def get_memory():
     return {
         "memory": memory_data,
         "timestamp": datetime.now().isoformat()
+    }
+
+
+@app.post("/api/workflows/decision")
+async def workflow_decision(payload: Dict):
+    """Persist an accept/reject decision for a discovered workflow.
+
+    payload: { "id": "workflow_id", "action": "accept"|"reject" }
+    """
+    wf_id = payload.get("id")
+    action = payload.get("action")
+    if not wf_id or action not in ("accept", "reject"):
+        return {"status": "error", "detail": "invalid payload"}
+
+    shadow = get_shadow_mode()
+    accepted = getattr(shadow, 'accepted_workflows', None)
+    rejected = getattr(shadow, 'rejected_workflows', None)
+    if accepted is None:
+        shadow.accepted_workflows = []
+        accepted = shadow.accepted_workflows
+    if rejected is None:
+        shadow.rejected_workflows = []
+        rejected = shadow.rejected_workflows
+
+    # find in candidates and move
+    moved = None
+    if hasattr(shadow, 'workflow_candidates'):
+        for wf in list(shadow.workflow_candidates):
+            if wf.get('id') == wf_id:
+                moved = wf
+                try:
+                    shadow.workflow_candidates.remove(wf)
+                except Exception:
+                    pass
+                break
+
+    if action == 'accept':
+        if moved:
+            accepted.append(moved)
+        else:
+            accepted.append({"id": wf_id, "name": wf_id, "timestamp": datetime.now().isoformat()})
+    else:
+        if moved:
+            rejected.append(moved)
+        else:
+            rejected.append({"id": wf_id, "name": wf_id, "timestamp": datetime.now().isoformat()})
+
+    return {
+        "status": "ok",
+        "accepted": accepted,
+        "rejected": rejected,
+        "discovered": getattr(shadow, 'workflow_candidates', [])
     }
 
 

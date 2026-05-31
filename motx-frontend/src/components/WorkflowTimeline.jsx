@@ -1,6 +1,6 @@
 import { Zap, TrendingUp } from "lucide-react";
 
-function WorkflowTimeline({ workflows = [] }) {
+function WorkflowTimeline({ workflows = [], onAccept, onReject }) {
   if (!workflows || workflows.length === 0) {
     return (
       <div
@@ -127,6 +127,40 @@ function WorkflowTimeline({ workflows = [] }) {
                   {new Date(workflow.timestamp).toLocaleTimeString("fr-FR")}
                 </div>
               )}
+
+              {/* Action buttons */}
+              <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                <button
+                  onClick={() => onAccept && onAccept(workflow)}
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: 8,
+                    background: "#10B981",
+                    color: "#050B18",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  Accepter
+                </button>
+                <button
+                  onClick={() => onReject && onReject(workflow)}
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: 8,
+                    background: "transparent",
+                    color: "rgba(226,232,240,0.8)",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    border: "1px solid rgba(226,232,240,0.06)",
+                    cursor: "pointer",
+                  }}
+                >
+                  Rejeter
+                </button>
+              </div>
             </div>
           </div>
         </div>

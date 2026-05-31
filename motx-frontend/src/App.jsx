@@ -84,6 +84,30 @@ export default function App() {
     const stored = window.localStorage.getItem("motx-onboarding-done");
     return !stored;
   });
+  // Seed workflows to show on first launch
+  const SEED_WORKFLOWS = [
+    {
+      id: "seed_git_commit",
+      name: "Git Commit Flow",
+      description: "Ouverture VSCode → Édition fichier → Git commit",
+      confidence: 0.78,
+      timestamp: new Date(Date.now() - 3600000).toISOString(),
+    },
+    {
+      id: "seed_documentation",
+      name: "Documentation Update",
+      description: "Édition fichier → Git add → Git push",
+      confidence: 0.68,
+      timestamp: new Date(Date.now() - 1800000).toISOString(),
+    },
+    {
+      id: "seed_code_review",
+      name: "Code Review Routine",
+      description: "GitHub PR → VSCode → Terminal tests",
+      confidence: 0.74,
+      timestamp: new Date(Date.now() - 900000).toISOString(),
+    },
+  ];
   const [connected, setConnected] = useState(false);
   const [ambientConnected, setAmbientConnected] = useState(false);
   const [eyeConnected, setEyeConnected] = useState(false);
@@ -97,29 +121,7 @@ export default function App() {
     successRate: 0,
     averageSpeed: 0,
     activeAgents: 0,
-    discoveredWorkflows: [
-      {
-        id: "seed_git_commit",
-        name: "Git Commit Flow",
-        description: "Détecte la séquence : VSCode → Git → Terminal commit",
-        confidence: 0.92,
-        timestamp: new Date(Date.now() - 3600000).toISOString(),
-      },
-      {
-        id: "seed_documentation",
-        name: "Documentation Update",
-        description: "Pattern : Édition fichier → Git add → Git push",
-        confidence: 0.87,
-        timestamp: new Date(Date.now() - 1800000).toISOString(),
-      },
-      {
-        id: "seed_code_review",
-        name: "Code Review Routine",
-        description: "Cycle : GitHub PR → VSCode → Terminal tests",
-        confidence: 0.78,
-        timestamp: new Date(Date.now() - 900000).toISOString(),
-      },
-    ]
+    discoveredWorkflows: showOnboarding ? SEED_WORKFLOWS : []
   });
   const [toasts, setToasts] = useState([]);
   const [userId] = useState(initialUserId);
@@ -348,15 +350,15 @@ export default function App() {
         const successRate = overview.success_rate ?? performance.success_rate ?? 0;
         const averageSpeed = overview.average_speed_seconds ?? performance.average_execution_time ?? 0;
         const activeAgents = overview.active_agents ?? overview.active_workflows ?? agents.filter((agent) => agent.active).length;
-        const discoveredWorkflows = payload.discoveredWorkflows || [];
+        const discovered = payload.discoveredWorkflows;
 
-        setDashboardMetrics({
+        setDashboardMetrics((prev) => ({
           totalExecutions,
           successRate,
           averageSpeed,
           activeAgents,
-          discoveredWorkflows
-        });
+          discoveredWorkflows: Array.isArray(discovered) ? discovered : (prev.discoveredWorkflows || [])
+        }));
       } catch (error) {
         console.warn('Impossible de charger les métriques du dashboard', error);
         const successful = executionLog.filter((e) => e.status === 'ok').length;
@@ -441,6 +443,68 @@ export default function App() {
   const removeToast = useCallback((id) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
   }, []);
+
+  const handleAcceptWorkflow = useCallback((workflow) => {
+    // Try persist to backend, fallback to local update
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/workflows/decision`, {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: workflow.id, action: 'accept' })
+        });
+        const payload = await res.json();
+        if (res.ok && payload.status === 'ok') {
+          addToast("success", "Workflow accepté", `${workflow.name} ajouté aux automatisations`, 4000);
+          setDashboardMetrics((prev) => ({
+            ...prev,
+            discoveredWorkflows: payload.discovered || [],
+            acceptedWorkflows: payload.accepted || prev.acceptedWorkflows || []
+          }));
+          return;
+        }
+      } catch (e) {
+        // continue to fallback
+      }
+
+      // Fallback local-only
+      addToast("success", "Workflow accepté", `${workflow.name} ajouté aux automatisations` , 4000);
+      setDashboardMetrics((prev) => ({
+        ...prev,
+        discoveredWorkflows: (prev.discoveredWorkflows || []).filter((w) => w.id !== workflow.id),
+        acceptedWorkflows: [...(prev.acceptedWorkflows || []), { ...workflow, timestamp: new Date().toISOString() }]
+      }));
+    })();
+  }, [addToast]);
+
+  const handleRejectWorkflow = useCallback((workflow) => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/workflows/decision`, {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: workflow.id, action: 'reject' })
+        });
+        const payload = await res.json();
+        if (res.ok && payload.status === 'ok') {
+          addToast("info", "Workflow rejeté", `${workflow.name} ignoré`, 4000);
+          setDashboardMetrics((prev) => ({
+            ...prev,
+            discoveredWorkflows: payload.discovered || [],
+            rejectedWorkflows: payload.rejected || prev.rejectedWorkflows || []
+          }));
+          return;
+        }
+      } catch (e) {}
+
+      addToast("info", "Workflow rejeté", `${workflow.name} ignoré`, 4000);
+      setDashboardMetrics((prev) => ({
+        ...prev,
+        discoveredWorkflows: (prev.discoveredWorkflows || []).filter((w) => w.id !== workflow.id),
+        rejectedWorkflows: [...(prev.rejectedWorkflows || []), { ...workflow, timestamp: new Date().toISOString() }]
+      }));
+    })();
+  }, [addToast]);
 
   // Emit toast when Shadow Mode detects activity
   useEffect(() => {
@@ -530,6 +594,8 @@ export default function App() {
           agents={agents}
           onToggleAgent={handleToggleAgent}
           run={(target) => { if (target) setActive(target); }}
+          onAcceptWorkflow={handleAcceptWorkflow}
+          onRejectWorkflow={handleRejectWorkflow}
         />
       </main>
       </div>
