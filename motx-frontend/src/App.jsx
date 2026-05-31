@@ -434,9 +434,9 @@ export default function App() {
     }
   };
 
-  const addToast = useCallback((type = "info", title = "", message = "", duration = 4000) => {
+  const addToast = useCallback((type = "info", title = "", message = "", duration = 4000, options = {}) => {
     const id = `toast-${Date.now()}-${Math.random()}`;
-    setToasts((prev) => [...prev, { id, type, title, message, duration }]);
+    setToasts((prev) => [...prev, { id, type, title, message, duration, ...options }]);
     return id;
   }, []);
 
@@ -506,26 +506,46 @@ export default function App() {
     })();
   }, [addToast]);
 
-  // Emit toast when Shadow Mode detects activity
+  // Emit progressive toast updates when Shadow Mode is active
   useEffect(() => {
     const shadowAgent = agents.find((a) => a.id === "shadow");
-    if (shadowAgent?.active) {
-      // Simulate detection events
-      const interval = setInterval(() => {
-        if (Math.random() > 0.6) {
-          const messages = [
-            { title: "🕵️ Activité détectée", message: "Pattern VSCode → Terminal observé" },
-            { title: "🔄 Pattern reconnu", message: "Git workflow en cours d'exécution" },
-            { title: "🎯 Workflow découvert", message: "Nouvelle routine d'automation détectée" },
-            { title: "✨ Suggestion", message: "Vous pourriez automatiser cette séquence" },
-          ];
-          const msg = messages[Math.floor(Math.random() * messages.length)];
-          addToast("shadow", msg.title, msg.message, 5000);
-        }
-      }, 4000);
+    if (!shadowAgent?.active) return;
 
-      return () => clearInterval(interval);
-    }
+    const sequence = [
+      {
+        type: "shadow",
+        title: "🕵️ App change détecté",
+        message: "VS Code détecté",
+        duration: 4800,
+        confetti: false,
+      },
+      {
+        type: "progress",
+        title: "🧠 Pattern en train d'être appris",
+        message: "2/3 occurrences détectées",
+        duration: 5200,
+        progress: { current: 2, total: 3, label: "Apprentissage" },
+      },
+      {
+        type: "shadow",
+        title: "✅ Workflow proposé",
+        message: "Git Commit Flow (confiance 76%)",
+        duration: 5800,
+        confetti: true,
+      },
+    ];
+
+    let index = 0;
+    const interval = setInterval(() => {
+      const toast = sequence[index % sequence.length];
+      addToast(toast.type, toast.title, toast.message, toast.duration, {
+        progress: toast.progress,
+        confetti: toast.confetti,
+      });
+      index += 1;
+    }, 7000);
+
+    return () => clearInterval(interval);
   }, [agents, addToast]);
 
   useEffect(() => {
@@ -596,6 +616,7 @@ export default function App() {
           run={(target) => { if (target) setActive(target); }}
           onAcceptWorkflow={handleAcceptWorkflow}
           onRejectWorkflow={handleRejectWorkflow}
+          addToast={addToast}
         />
       </main>
       </div>

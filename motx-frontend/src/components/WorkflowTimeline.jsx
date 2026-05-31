@@ -122,11 +122,24 @@ function WorkflowTimeline({ workflows = [], onAccept, onReject }) {
                   {workflow.description}
                 </div>
               )}
-              {workflow.timestamp && (
-                <div style={{ fontSize: 10, color: "rgba(226,232,240,.4)", marginTop: 6 }}>
-                  {new Date(workflow.timestamp).toLocaleTimeString("fr-FR")}
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6, gap: 10 }}>
+                <div style={{ fontSize: 10, color: "rgba(226,232,240,.4)" }}>
+                  {workflow.timestamp ? new Date(workflow.timestamp).toLocaleTimeString("fr-FR") : "—"}
+                  {workflow.source && (
+                    <span style={{ marginLeft: 8, fontSize: 10, color: "rgba(226,232,240,.36)" }}>• {workflow.source}</span>
+                  )}
                 </div>
-              )}
+
+                {workflow.progress !== undefined && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div style={{ fontSize: 10, color: "rgba(226,232,240,.4)" }}>{workflow.progress.current}/{workflow.progress.total}</div>
+                    <div style={{ width: 120, height: 8, background: "rgba(255,255,255,.04)", borderRadius: 8, overflow: "hidden" }}>
+                      <div style={{ width: `${(workflow.progress.current / Math.max(1, workflow.progress.total)) * 100}%`, height: "100%", background: "linear-gradient(90deg,#A78BFA,#60A5FA)" }} />
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Action buttons */}
               <div style={{ display: "flex", gap: 8, marginTop: 10 }}>

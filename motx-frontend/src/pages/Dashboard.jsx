@@ -1,5 +1,9 @@
 import { Zap, CheckCircle, Clock, Bot, Play, BarChart2, Mic, Layers } from "lucide-react";
 import WorkflowTimeline from "../components/WorkflowTimeline";
+import WorkflowGraph from "../components/WorkflowGraph";
+import QuickStats from "../components/QuickStats";
+import SummaryCard from "../components/SummaryCard";
+import GettingStartedCard from "../components/GettingStartedCard";
 
 const SLabel = ({ children }) => (
   <div style={{ fontSize: 10, color: "rgba(226,232,240,.28)", letterSpacing: "0.15em", textTransform: "uppercase", marginBottom: 16 }}>
@@ -7,7 +11,7 @@ const SLabel = ({ children }) => (
   </div>
 );
 
-function Dashboard({ ambientUpdate, eyeGaze, run, executionLog, services, dashboardMetrics, agents, onAcceptWorkflow, onRejectWorkflow }) {
+function Dashboard({ ambientUpdate, eyeGaze, run, executionLog, services, dashboardMetrics, agents, onAcceptWorkflow, onRejectWorkflow, addToast }) {
   const recentExecutions = executionLog.slice(0, 5);
   
   // Récupérer les workflows du Shadow Mode agent
@@ -60,6 +64,11 @@ function Dashboard({ ambientUpdate, eyeGaze, run, executionLog, services, dashbo
         <h1 style={{ fontSize: 28, fontWeight: 600, color: "#E2E8F0", letterSpacing: "-0.02em" }}>Dashboard</h1>
       </div>
 
+      <SummaryCard metrics={{ learnedWorkflows: (dashboardMetrics.acceptedWorkflows || []).length, lastDetected: dashboardMetrics.lastDetected, topPatterns: dashboardMetrics.topPatterns, learningProgress: dashboardMetrics.learningProgress || 0 }} />
+      <GettingStartedCard onStartDemo={() => addToast && addToast("shadow", "🎮 Démo Shadow Mode lancée", "Simulation de 30s démarrée", 5000, { confetti: true })} />
+      <QuickStats metrics={{ detectedApps: dashboardMetrics.detectedApps, patternsInProgress: dashboardMetrics.patternsInProgress, averageConfidence: dashboardMetrics.averageConfidence }} />
+      <WorkflowGraph workflows={dashboardMetrics.discoveredWorkflows} />
+
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 }}>
         {stats.map(({ label, sub, value, Icon, color, glow, delay }) => (
           <div key={label} className="stat-card" style={{ animationDelay: delay }}>
@@ -108,6 +117,11 @@ function Dashboard({ ambientUpdate, eyeGaze, run, executionLog, services, dashbo
       <div className="glass" style={{ padding: 24 }}>
         <SLabel>Workflows Découverts</SLabel>
         <WorkflowTimeline workflows={workflows} onAccept={onAcceptWorkflow} onReject={onRejectWorkflow} />
+        <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="btn" onClick={() => addToast && addToast('shadow', '🕵️ App change détecté', 'VS Code détecté', 5000, { confetti: false })}>Simuler notification</button>
+          <button className="btn" onClick={() => addToast && addToast('progress', '🧠 Pattern en cour de détection', '2/3 occurrences', 5200, { progress: { current: 2, total: 3, label: 'Détection' } })}>Simuler progression</button>
+          <button className="btn" onClick={() => addToast && addToast('shadow', '✅ Workflow proposé', 'Git Commit Flow (76%)', 5600, { confetti: true })}>Simuler workflow</button>
+        </div>
       </div>
 
       <div className="glass" style={{ padding: 24 }}>
