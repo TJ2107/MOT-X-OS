@@ -233,4 +233,5 @@ Write-Host "============================================" -ForegroundColor Red
 Stop-Process -Id $backend.Id -Force -ErrorAction SilentlyContinue
 Stop-Process -Id $frontend.Id -Force -ErrorAction SilentlyContinue
 Stop-Process -Id $ui.Id -Force -ErrorAction SilentlyContinue
+if ($monitorProc) { Stop-Process -Id $monitorProc.Id -Force -ErrorAction SilentlyContinue }
 Write-Host "MOT-X OS est arrete. Au revoir!" -ForegroundColor Cyan

@@ -11,6 +11,14 @@ from .proactive_symbiosis import ProactiveSymbiosis
 from .emotional_ecosystem import EmotionalEcosystem, Mood
 from .contextual_shortcuts import ContextualShortcuts
 
+# Indispensable Features
+from .life_twin_engine import LifeTwinEngine
+from .intent_prediction_engine import IntentPredictionEngine
+from .infinite_memory import InfiniteMemory
+from .friction_detector import FrictionDetector
+from .life_graph import LifeGraph
+from .focus_guardian_pro import FocusGuardianPro
+
 __all__ = [
     "MOTXAutomationEngine",
     "CognitiveOperatingLayer",
@@ -25,4 +33,11 @@ __all__ = [
     "EmotionalEcosystem",
     "Mood",
     "ContextualShortcuts",
+    # Indispensable Features
+    "LifeTwinEngine",
+    "IntentPredictionEngine",
+    "InfiniteMemory",
+    "FrictionDetector",
+    "LifeGraph",
+    "FocusGuardianPro",
 ]
